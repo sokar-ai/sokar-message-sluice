@@ -1,8 +1,8 @@
 # Decisions
 
-What holds and why, grouped by what it covers. A row is written as part of taking the decision, and
-the full text sits below it. Accepted risks belong here too: what the exposure is, why it is not
-being removed, and what would change the answer.
+What holds and why, grouped by what it covers: one row per decision, and its full text below. An
+accepted risk is among them, with what the exposure is, why it is not being removed, and what would
+change the answer.
 
 | Covers | Decision |
 |---|---|
