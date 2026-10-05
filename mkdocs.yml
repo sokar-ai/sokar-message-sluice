@@ -1,0 +1,12 @@
+site_name: Sokar Message Sluice
+docs_dir: doc
+strict: true
+nav:
+  - The filter: filter.md
+  - What it looks for: detectors.md
+  - Decisions: decisions.md
+validation:
+  links:
+    anchors: warn
+    unrecognized_links: warn
+    absolute_links: warn

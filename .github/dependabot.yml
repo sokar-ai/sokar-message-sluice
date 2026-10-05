@@ -1,0 +1,17 @@
+# A pinned action does not move by itself: Dependabot proposes the new commits as one pull request,
+# after they are three days old, which a person reviews. Nothing is merged automatically.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directories:
+      - "/"
+      - "/.github/actions/*"
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "Move the pinned"

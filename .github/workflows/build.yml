@@ -1,0 +1,208 @@
+# Unit tests, the native executable, its packages - and on main, the packages published.
+name: Build
+
+# A push that only touches documentation builds nothing - except AGENTS.md, whose shared rules are checked.
+on:
+  push:
+    branches: ['**']
+    # A release: v<version>, built and published to the 'releases' channel. Paths are not filtered for a tag.
+    tags: ['v*']
+    paths: ['**', '!**/*.md', 'AGENTS.md']
+  pull_request:
+    branches: ['**']
+    paths: ['**', '!**/*.md', 'AGENTS.md']
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  build:
+    name: Build, test and package
+    # Pinned, not 'ubuntu-latest'.
+    runs-on: ubuntu-24.04
+    # About three times a normal run (4-5 minutes, measured): a slow runner must end,
+    # not run for GitHub's six hours.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Cache the Maven repository
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-
+
+      # The GraalVM that compiles the binaries is the one sokar-machines pins, its archive checked
+      # against the pinned digest before it is unpacked. The runner's own Java 25 only runs that
+      # step and builds nothing that is published. -U, because a cached snapshot of sokar-machines
+      # would otherwise keep an old pin for a day.
+      - name: The pinned GraalVM
+        run: |
+          export JAVA_HOME="$JAVA_HOME_25_X64"
+          ./mvnw -B -q -U -N -Pci-tools -s settings.xml dependency:build-classpath \
+              -Dmdep.outputFile="$RUNNER_TEMP/tools.classpath"
+          "$JAVA_HOME/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
+              org.fuin.sokar.machines.Main jdk --github
+
+      # Every action by a commit with its exact release, no JDK fetched by a version name, Dependabot
+      # watching and grouping them, and the Maven wrapper's download checked against its digest.
+      - name: What the build runs is pinned
+        run: |
+          "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
+              org.fuin.sokar.release.Main check-actions
+
+      # The shared rules are copied byte for byte into every repository; an edited copy no longer
+      # matches the hash its markers carry.
+      - name: The shared rules are unchanged copies
+        run: |
+          "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
+              org.fuin.sokar.release.Main check-shared AGENTS.md
+
+      # -s settings.xml declares the snapshot repository, and keeps a developer's own
+      # ~/.m2/settings.xml out of what CI resolves. The filter ships as a native executable in
+      # packages, so both are built on every push; the run number makes each snapshot's version
+      # newer than the last.
+      - name: Build, unit tests, native images and packages
+        timeout-minutes: 12
+        run: ./mvnw -B -s settings.xml -Pnative,dist verify -Dsluice.snapshot.run=${{ github.run_number }}
+
+      # What is packaged, not the classes: every fixture must end where its name says, run from the
+      # unpacked .deb and .rpm with an empty environment, so no Java can be involved. Counted on the
+      # directories, never on grepped output.
+      - name: Run the packaged binaries against the fixtures
+        run: |
+          set -euo pipefail
+          for format in deb rpm; do
+            R="$RUNNER_TEMP/root-$format"
+            mkdir -p "$R"
+            if [ "$format" = deb ]; then
+              for p in */dist-deb/target/*.deb; do dpkg-deb -x "$p" "$R"; done
+            else
+              for p in */dist-rpm/target/*.rpm; do (cd "$R" && rpm2cpio "$GITHUB_WORKSPACE/$p" | cpio -idm); done
+            fi
+            FILTER="$R/usr/libexec/sokar/sokar-message-sluice-filter"
+            M="$RUNNER_TEMP/mail-$format"
+            mkdir -p "$M"/{incoming,sent} "$M"/filter/{accepted,feedback}
+            mkdir -m 700 "$M"/filter/{rejected,error}
+            cp filter/app/src/test/resources/fixtures/*.json "$M/incoming/"
+            set +e
+            env -i PATH=/usr/bin:/bin "$FILTER" --mail "$M" --blocking --stabilityDelayMillis 0
+            code=$?
+            set -e
+            test "$code" -eq 1
+            # A fixture's prefix says where it lands (fixtures/README.md), so the expected sets are read from
+            # the names rather than counted by hand: a new fixture cannot leave this check behind.
+            F=filter/app/src/test/resources/fixtures
+            test "$(ls "$F" | grep -c '[.]json$')" -gt 10
+            expect() { (cd "$F" && ls $1 2>/dev/null | sort); }
+            test "$(ls "$M"/filter/accepted | sort)" = "$(expect 'accept-*.json')"
+            test "$(ls "$M"/filter/rejected | sort)" = "$(expect 'detector-*.json envelope-*.json')"
+            test "$(ls "$M"/filter/error | grep -v '[.]error[.]txt$' | sort)" = "$(expect 'unprocessable-*.json')"
+            test "$(ls "$M"/filter/feedback | wc -l)" -eq "$(ls "$F" | grep -c '[.]json$')"
+            test -z "$(ls "$M"/incoming)"
+          done
+
+      # Only main and a release tag publish. A tag publishes a release, everything else a snapshot; a release
+      # is refused unless the tag is exactly 'v' plus the version it carries, and a version is never a release
+      # and a snapshot at once.
+      - name: Which channel
+        id: channel
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        run: |
+          set -eu
+          VERSION="$(sed -n 's|^    <version>\(.*\)</version>$|\1|p' pom.xml | head -1)"
+          [ -n "$VERSION" ] || { echo "::error::no version in pom.xml"; exit 1; }
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+              [ "$GITHUB_REF_NAME" = "v$VERSION" ] \
+                  || { echo "::error::the tag $GITHUB_REF_NAME is not v$VERSION, the version this commit carries"; exit 1; }
+              case "$VERSION" in
+                  *-SNAPSHOT) echo "::error::$VERSION is a snapshot; a release carries its own version"; exit 1 ;;
+              esac
+              echo "channel=releases" >> "$GITHUB_OUTPUT"
+          else
+              case "$VERSION" in
+                  *-SNAPSHOT) ;;
+                  *) echo "::error::$VERSION on a branch would publish a release as a snapshot"; exit 1 ;;
+              esac
+              echo "channel=snapshots" >> "$GITHUB_OUTPUT"
+          fi
+          echo "  $VERSION -> $(tail -1 "$GITHUB_OUTPUT")"
+
+      # The deb's properties are what put it into the index; without them it is stored and never listed,
+      # and nothing says so.
+      - name: Set up the JFrog CLI
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        uses: jfrog/setup-jfrog-cli@68c0efdc951dd2359bbbfa15c48bc67b3ae8e4d6 # v5.2.0
+        with:
+          disable-auto-build-publish: true
+        env:
+          JF_URL: ${{ vars.JF_URL }}
+          JF_ACCESS_TOKEN: ${{ secrets.JF_ACCESS_TOKEN }}
+
+      # Into the channel this run publishes to. A release that is already there is refused: a published
+      # release is never replaced.
+      - name: Publish the packages
+        timeout-minutes: 5
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        env:
+          JF_URL: ${{ vars.JF_URL }}
+          CHANNEL: ${{ steps.channel.outputs.channel }}
+        run: |
+          set -euo pipefail
+          if [ "$CHANNEL" = releases ]; then
+            published="$(curl -sfL "${JF_URL%/}/artifactory/sokar-dist-deb/dists/releases/main/binary-amd64/Packages" || true)"
+            for p in */dist-deb/target/*.deb; do
+              name="$(dpkg-deb -f "$p" Package)"
+              if grep -qxF "Filename: pool/main/s/$name/$(basename "$p")" <<< "$published"; then
+                echo "::error::$(basename "$p") is published already"; exit 1
+              fi
+            done
+          fi
+          for p in */dist-deb/target/*.deb; do
+            name="$(dpkg-deb -f "$p" Package)"
+            jf rt upload "$p" "sokar-dist-deb/pool/main/s/$name/" --flat=true \
+                --target-props="deb.distribution=${CHANNEL};deb.component=main;deb.architecture=amd64"
+          done
+          for p in */dist-rpm/target/*.rpm; do
+            jf rt upload "$p" "sokar-dist-rpm/${CHANNEL}/" --flat=true
+          done
+
+      # Indexing is asynchronous and fails silently, so the index is read back - anonymously, as an
+      # installer sees it, following Artifactory's redirect - and must name the very file just
+      # uploaded, not merely the package: yesterday's build in the index would pass that.
+      - name: The packages are indexed, not merely stored
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        env:
+          JF_URL: ${{ vars.JF_URL }}
+          CHANNEL: ${{ steps.channel.outputs.channel }}
+        run: |
+          set -euo pipefail
+          base="${JF_URL%/}/artifactory"
+          indexed() {
+            local packages primary
+            packages="$(curl -sfL "$base/sokar-dist-deb/dists/${CHANNEL}/main/binary-amd64/Packages" || true)"
+            for p in */dist-deb/target/*.deb; do
+              name="$(dpkg-deb -f "$p" Package)"
+              grep -qxF "Filename: pool/main/s/$name/$(basename "$p")" <<< "$packages" || return 1
+            done
+            primary="$(curl -sfL "$base/sokar-dist-rpm/${CHANNEL}/repodata/repomd.xml" \
+                | sed -n 's/.*<location href="\([^"]*primary.xml.gz\)".*/\1/p' | head -1)"
+            [ -n "$primary" ] || return 1
+            primary="$(curl -sfL "$base/sokar-dist-rpm/${CHANNEL}/$primary" | gunzip || true)"
+            for p in */dist-rpm/target/*.rpm; do
+              grep -qF "$(basename "$p")" <<< "$primary" || return 1
+            done
+          }
+          for attempt in $(seq 1 20); do
+            if indexed; then
+              echo "all packages indexed"
+              exit 0
+            fi
+            sleep 6
+          done
+          echo "uploaded but not indexed after two minutes" >&2
+          exit 1

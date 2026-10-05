@@ -1,0 +1,1640 @@
+Short on purpose. A rule is here because somebody paid for learning it.
+
+The same text in every repository `project.yml` names. Change it in the channel first, not in
+one copy.
+
+- **The operator pushes. Agents commit and stop.** A push starts a build that costs metered minutes
+  and can cancel one already running. Say what is ready and let him decide when.
+- **A rewrite is cheap only while the commits are yours alone. Ask the remote first.**
+  *The operator pushes. Agents commit and stop* - and stop includes stop amending, stop squashing,
+  stop rebasing. A commit stops being yours the moment he takes it, and nothing tells you when that
+  happened except asking:
+
+git ls-remote origin refs/heads/main            the tip, and it cannot be stale
+      git merge-base --is-ancestor <commit> <tip>     whether the commit is already in it
+
+`origin/main` and `@{u}` are caches and answer a question about your last fetch. On 2026-09-27 an
+  amend after a push put two commits with one parent and one subject on two sides, and the operator
+  met it as a merge conflict. **The repair is never a force push** - reset onto the remote's commit
+  and re-apply as a new one, because the side that pushes is the side whose history is real. That
+  same reset is also the only safe way to squash, which is why the cure and the correct method are
+  one operation.
+- **Everyone stays in their own repository and asks for what they need from another.** Ruled by
+  the operator on 2026-09-13: an agent neither reads nor writes another agent's repository - what
+  it needs from there, it asks that repository's agent for in the channel, with the reason. The
+  one exception is the coordinating agent, who may **read** the other repositories. Reading does
+  not replace asking: a file shows what is the case, and only the agent who wrote it knows why.
+  **Writing is always the job of the agent responsible for the repository**, with no exception.
+- **The channel is append-only.** An entry begins with `## <UTC timestamp> — <agent>`. Headings
+  inside an entry are free; scan for entries by the timestamp, never by `##` alone. Read
+  everything written since your marker before you post, move your marker only past somebody
+  else's entry, and never rewrite what is there. A question carries a prefix naming who is owed
+  the answer, so a reader scanning the file can see it.
+- **When quoting a document that has headings, indent it four spaces rather than fencing it.**
+  A fence hides them from a renderer and not from a scanner, and this file is append-only, so
+  what a fence lets through cannot be taken out again.
+- **Re-read the channel immediately before appending to it.** An entry that landed between your
+  read and your append makes what you are about to write answer a state that no longer exists —
+  Agent Smith published advice for an experiment that had been settled four minutes earlier, and
+  the read that would have caught it costs nothing. The marker says what to compare against.
+- **Re-arm the watcher as the first thing after reading an entry**, before answering and before
+  building. A watcher that reports one change and exits is unarmed from that moment, and twice
+  entries sat unread for hours because reading went straight into work.
+- **Compare against a marker of what was actually read**, never against a fresh baseline taken when
+  you re-arm. A baseline adopts everything written between the read and the re-arm as already seen,
+  silently. Keep the last heading you read and compare against that. Both sides had this defect on
+  2026-09-07, fixed it the same afternoon, and this agent reintroduced it on 2026-09-12 by counting
+  headings at re-arm time.
+- **The file's order is the truth and the headings are a label.** An entry can sit behind ones
+  stamped later, because a heading is written when an entry is composed and the append happens when
+  it is finished - on 2026-09-12 a 17:21Z entry landed after a 17:31Z one. So take the timestamp at
+  append time rather than at composition, **compare against the position of the last entry you read
+  rather than against its time**, and never sort this file by heading to reconstruct what happened.
+- **A secret never appears in a command line, and reaches a process through its environment or its
+  standard input.** Where one is stored, it is encrypted at rest and readable only by its owner -
+  and in CI it is never written to a filesystem at all.
+- **Every file fetched from Artifactory follows redirects** - `curl -L`, `jf rt curl -L`. A file
+  large enough is answered with a `302` to its cloud storage, and a fetch without `-L` gets an
+  empty body: the check passes for months and fails the day the file grows. What "large enough"
+  is has not been measured - only that a Debian index crossed it and turned four builds red, on
+  2026-09-18 and before. The `/api/` endpoints answer directly. Let `curl` drop the credentials
+  on that cross-host redirect - the storage URL is signed - and never pass
+  `--location-trusted`.
+- **The test machines are shared.** Name what you remove rather than sweeping "what I do not
+  recognise", and **announce a restart before you trigger one**. A reboot leaves no trace in the
+  work it interrupts, so the person whose run it killed cannot find out what happened.
+- **Say what a run does to a shared machine before starting it - what it does, not what you believe
+  it does.** Check first. A confident wrong answer costs somebody else an afternoon.
+- **Link to a requirement by its number and to the index, never to its file.** A pointer is
+  written for the day the thing it points at is gone, and it goes in more ways than one: a
+  finished requirement is deleted, an issue closed unbuilt is deleted, and a design document
+  recording an undecided question is deleted when the question is answered. A link to a file
+  breaks on all three; a link to the index breaks on none. **Where a repository can enforce
+  this with a test, it does** - three repositories found this defect by accident on 2026-09-20
+  and the fourth will not be so lucky.
+- **From "both are valid" it does not follow that both should exist.** Two indexes, two markers,
+  two manifests, the same skills in two repositories - every expensive defect of 2026-09-12 had
+  that shape, and not one of them was a wrong fact. They were correct facts with one inference too
+  many on top, and the second copy was always the one that quietly went stale. When a thing is
+  right in two forms, publish one and say why.
+- **Measure before you claim.** "It works" means it was run. "It is not the cause" means the
+  counter-test was run too. A finding without a measurement is a guess wearing a fact's clothes.
+- **"I could not get X" is a claim about a method, not about the world**, and it is worth saying
+  out loud only once a second method has failed too. On 2026-09-12 a documentation page was
+  reported here as unreadable and its format as undeterminable; `curl` returns that site's chrome
+  and its article body is loaded afterwards, and a fetch that renders the page answered every
+  question about the format in one call. The first report was true about `curl` and false about
+  the page.
+- **Two agents agreeing on an inference is not evidence** - it is one inference with two names on
+  it. Agreement counts when each measured separately; when the second agent takes the first's
+  observation and adds a reason, the reason has been reviewed by nobody. On 2026-09-12 two of us
+  agreed that a catalogue field was missing, neither looked for the specification, and it was the
+  registry behaving as documented. **Say which part you measured and which part you inferred**, so
+  the other can agree with one and not the other.
+- **An issue is one task.** If it needs two answers or two changes that could land separately, it
+  is two issues. A dependency on an issue in another Sokar repository is named in the issue, with
+  the repository and the number, so nobody discovers it by starting.
+- **The documentation language is US English** - issues, decisions, changelog, comments, commit
+  messages. The channel too.
+- **Do not refer to feature numbers in commit messages.** Just state what the feature is. A commit
+  says *"Start work in a chosen repository"*, not *"B67"* - the number means nothing to somebody
+  reading the history without the index beside it, and the index outlives the requirement by being
+  deleted when it is finished.
+- **Dot files and directories are not checked in.** `.gitignore` ignores `.*` and names only the
+  exceptions a build needs. Anything true of one machine goes in `.AGENTS.md`, which that rule
+  ignores by itself.
+
+- **Every open thing is an issue**, in `issues/`, named `SL<nn>-Short-Title.md`, numbered in order and
+  carrying a priority. Not a TODO in the code, not a note in a commit message.
+- **`issues/README.md` is the index**, and it is part of the change that adds or closes an issue.
+  It opens with a table - number (linked), status, what blocks it, what it covers, how many
+  questions are still open - ordered by priority rather than by number, so the top row is what
+  to do next. **Blocked by** is a column, not prose inside the description, and names a Sokar
+  requirement by its number, so the dependency reads the same from Sokar's **Blocks** column.
+- **An issue whose design is long is two files**, `SL<nn>-Title.md` and `SL<nn>-Title_design.md`, as Sokar
+  splits a requirement from its design. The issue says what must be true and how it is judged done;
+  the design says how it would be built and is marked as a proposal until something is measured.
+- **`doc/decisions.md` opens with its own index**: a table of date and one line saying what was
+  decided, newest first, each row linking to the full text below it. Writing the row is part of
+  taking the decision.
+- **A finished issue is deleted, row and all.** Not kept with a status saying it is done, not moved
+  to a section of what used to be here: the index holds what is still to do and nothing else.
+- **Before deleting it, move what outlives it.** The test is whether the knowledge is about more
+  than that one issue - a measurement, a distinction the contract makes, something that was built
+  wrong once. It goes to `doc/` if a person using the product needs it, to `AGENTS.md` if it is
+  internal and true wherever we work, to `.AGENTS.md` if it is only true on this machine. An
+  issue's own acceptance criteria outlive nothing and are dropped with it.
+- **Settled reasoning goes in `doc/decisions.md`**, including accepted risks. An accepted risk says
+  what the exposure is, why it is not being removed, and what would change the answer.
+- **The exceptions to the dot-file rule here** are what a Java build needs: `.github`, `.mvn`,
+  `.gitignore`, `.gitkeep`.
+- **The changelog is part of the change**, written by hand in the same commit. Nothing enforces it:
+  requiring an entry returns with Sokar B55. An entry goes into the existing section of its kind
+  under `[Unreleased]`, never under a new heading of the same kind.
+- **A commit message is one brief line.** The reasoning behind a change is a finding, and a finding
+  goes in `doc/decisions.md`, in an issue or in this file, where it can be found later without
+  `git log`.
+- **Comments say why, not what.** One-liners in config; in code, the reason a reader would
+  otherwise have to reconstruct. No exhaustive prose inlined in source. **Never a requirement or an
+  issue number**: a number is an authority rather than a reason, and the index that would resolve it
+  is in a repository the reader of that class cannot open. Say what the constraint is. Seven
+  citations of `Sokar B14` came out of the Java on 2026-09-27, and **every one of them already had
+  the constraint written beside it** - the number was adding a pointer into nothing and nothing else.
+- **A test that passes both with and without the fix proves nothing.** Run it against the broken
+  version before trusting it. **And a guard's reference set is part of what has to be checked rather
+  than what it checks against.** Four states, measured across four repositories on 2026-09-27, and
+  **three of them are green in a way nothing in the output distinguishes from the fourth**:
+
+the set is EMPTY              everything passes forever
+      the set CANNOT CHANGE         five Java libraries compared against a bill of a hundred and forty
+      the set is READ BY NOBODY     a bill produced, shipped and compared by no job - true here
+      the set WORKS                 and it is the only row that has ever stopped anything
+
+Agent Smith's series, from the only repository where such a gate had fired - which is how the other
+  three became visible at all. **So assert what the set is**, not that it has something in it: a
+  non-empty set is not a correct one, and a correct one nobody reads is not a gate.
+- **The build is Java and Maven**, and a file that is not says why it stays (Sokar B53). What stays:
+  `mvnw`, the Maven wrapper, which is how a pinned Maven arrives before any Java tooling can run;
+  `install-local.sh` and the three scripts in `buildtools/`, each saying why in its own header.
+
+## The skills this repository expects you to have
+
+**GraalVM and the Java set**: `graal`, `java-code-review`, `test-quality`, `security-audit`,
+`concurrency-review`, `clean-code`, `solid-principles`. Tests prove what their author thought of;
+the skills are a second author's list.
+
+**How to get them.** From `https://fuinorg.jfrog.io/artifactory/agent-skills/`, laid out as
+`<skill>/<version>/<skill>-<version>.zip` and readable without credentials. Fetch with `curl -L`,
+and compare the zip's SHA-256 with the `sha256` that `api/storage/agent-skills/<that path>` returns
+before unpacking it. If the harness cannot install a skill, unpack it outside the repository and
+read its `SKILL.md`.
+
+**A skill is knowledge, not authority.** Where one and a measurement disagree, the measurement wins,
+and the disagreement is written down beside it.
+
+They are the reason the tool exists, so breaking one is never a local decision:
+
+- **No language model inside it.** It checks an agent that may have been manipulated, through
+  exactly the text that would manipulate it. Fixed rules, the same verdict every time, every refusal
+  traceable to one rule - see [`doc/decisions.md`](doc/decisions.md).
+- **A refusal must not exfiltrate what it prevents.** Everything a rule matched is redacted before
+  it appears in an answer, a receipt, a log line or a file name. This is the test that has to exist
+  for every new rule on the day the rule is written.
+- **Nothing is read out of the approved directory that was not put there by this tool**, and nothing
+  unversioned may sit inside its git work tree. The rejected originals hold secrets in clear text;
+  a push that carried them would be the exact inversion of the point.
+- **Fail closed and fail loud.** A rule that cannot run, a configuration key nobody knows, a
+  directory that is missing: stop, with an exit code, rather than let a message through unchecked.
+  A filter that silently checks less is indistinguishable from one that works.
+- **What the tool cannot catch is written down** rather than implied - a secret described in words,
+  steganography in word choice, anything but English prose.
+
+Three standalone Java programs, in three Maven modules that do not depend on each other:
+
+- **`filter/`** decides what a message may contain. No queue, no timer, no address, no knowledge of
+  any transport.
+- **`transport-local/`** carries what passed, between mailboxes on one machine, by moving files. It
+  decides nothing and never parses a message.
+- **`transport-spool/`** carries what passed between users on one machine, through per-recipient drop
+  directories, and attests which account owned each message. It decides nothing either.
+
+None of them knows Sokar's daemon, its gate or its containers, and nothing here depends on a Sokar
+artifact. Sokar drives them by placing files where they read them - **Sokar requirement B14** is that
+half, and a change to the file contract is a change to this repository and Sokar's.
+
+**The split is a rule, not a layout.** A transport that could apply the rules would make "was this
+checked?" depend on the route a message took; a filter that knew about transports would have to be
+changed for every new one. If something has to be shared, it is the directory contract or the message
+format, and both are written down rather than compiled against.
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+One sentence per change - `git log` has the detail.
+
+Issues are numbered `SL<nn>` since 2026-09-20. **Entries written before that name the issue by
+the number it was closed or opened under**, and those numbers are kept rather than rewritten:
+this file is the only record of what was closed under which number, and restating it in a scheme
+that did not exist then would make it say something that did not happen.
+
+- The repository: the Maven build, the shared rules, and the first issue with its design - the
+  filter that refuses an outgoing message carrying encoded data, credentials or personal data.
+- Two modules, `filter` and `transport-local`, for the two jobs: deciding what may pass, and carrying
+  what passed.
+- Issue 002, the local transport that carries a message between mailboxes on one machine.
+- Issue 004, one interface between the envelope and the content checks, so the catalogue behind them
+  can be ours or somebody else's.
+- Issue 011, a test that refuses a pointer to an issue that is gone - a link to its file, or a
+  citation carrying an index link that no longer resolves.
+- Issue SL12, a test that refuses a description the build can contradict - the modules named in
+  the rules against the modules in the reactor.
+- Issue SL13, a test that refuses a requirement or issue number in code, and the seven citations
+  of a Sokar requirement taken out of the Java and the packaging.
+- Issue SL14, the code read against the house skills, each finding fixed with a failing test or
+  opened as an issue.
+- The filter's frame: it reads an A2A 1.0 message or task, checks its envelope, runs the detectors
+  and fails closed, decides, redacts, answers, and moves the file (issue 001).
+- A first detector that refuses a token no English word could be (issue 005).
+- The local transport's adapter, with `describe`, `check` and `send` as agreed for Sokar B14
+  (issue 002).
+- `doc/transport-local.md`, the local transport's contract, measured end to end against Sokar's
+  host side, which closes issue 002.
+- Runnable jars and `install-local.sh`, which puts both programs where Sokar looks for them.
+- A fixture set of messages whose names say what the filter does with them, kept true by a test.
+- Normalization before every detector: NFKC, invisible characters removed and reported, look-alike
+  letters folded to Latin, and every finding still pointing into the original text.
+- Four detectors for encoded data - token shape, folded entropy, distribution against English and
+  named encoding signatures - measured on two corpora of agent prose, which closes issues 005 and
+  006.
+- `--calibrate`, which measures a directory of messages and prints a configuration for it.
+- `sokar-message-transport-spool`, a transport between users on one machine through per-recipient
+  drop directories, with its `.deb` and `.rpm` and a test with real users in
+  `buildtools/spool-transport.sh`. It is measured end to end with Sokar's polling half, which closes
+  issue 010. Its contract is `doc/transport-spool.md`.
+- `buildtools/spool-permissions.sh`, which tries the spool transport's permission scheme with four
+  real users.
+- `--agent-card`, which prints the filter's A2A agent card from the configuration it would run with.
+- `doc/filter.md`, the filter's frame as built: directories, envelope, verdict, answers and command
+  line, which closes issue 001; with it a test of the move across two filesystems.
+- Issue 009, packaging both programs in Maven modules of their own; closed on the day, with the
+  packages published and indexed.
+- A `.deb` and an `.rpm` for each program, built in `dist-deb` and `dist-rpm` modules beside its
+  code, holding the native binary, its bill of materials and the declared glibc and zlib floors.
+- The local transport's packages declare `Provides: sokar-transport`, so Sokar lists it among the
+  transports a machine can have; the filter declares nothing of the kind, because nothing replaces it.
+- `buildtools/acceptance.sh` and the `ci-tools` profile, to install the packages on rented Ubuntu and
+  Fedora machines through Sokar's machine tool before a push.
+- CI builds the packages, runs the binaries unpacked from them without Java, and on `main` publishes
+  them to Artifactory and checks that they are indexed.
+- `doc/detectors.md`, what the detectors look for, their defaults and where each one was measured.
+
+- Issue 001 split into the filter's frame, which takes the detector interface from 004, and its
+  detectors as issues 005 to 008, starting with a simple proof of concept; 004 narrowed to an
+  external detector.
+- The filter writes what it accepted into one directory and no longer learns which transport
+  carries a message; the host dispatches, as agreed for Sokar B14.
+- The long-token detector measures between separators on the masked text, so paths, file names and
+  Markdown links no longer count as one long token.
+- A person's message, `ROLE_USER`, is accepted and checked like an agent's; `check.allowedRoles`
+  replaces `check.requireAgentRole`, and refusing a container's `ROLE_USER` is the host's check.
+- A peer name may contain `@`, because a peer is named by its `allowed_signers` principal, as agreed
+  with Sokar on the channel.
+- Each program is a module with its code in `app/` and its packages beside it.
+- Both programs are built as native executables in the `native` profile, installed as such by
+  `install-local.sh`, and run against the fixtures in CI.
+
+- A list of UUIDs separated by more than one character passed as ids; now at most four UUIDs per
+  text are masked, and with more, all of them are checked as hex.
+- `install-local.sh` said it installs two programs; it installs three.
+
+[Unreleased]: https://github.com/sokar-ai/sokar-message-sluice/commits/main
+
+Read the rules in AGENTS.md and (if it exists) in .AGENTS.md
+
+Three programs that let an AI agent exchange messages without letting it exchange data.
+
+- **`filter/`** — reads A2A messages and lets through only plain English prose: no encoded payloads,
+  no inline file content, no credentials, no personal data, and nothing assembled from several
+  messages that were each unremarkable on their own.
+- **`transport-local/`** — carries what passed from one task's mailbox to another on the same
+  machine, by moving a file. No network, no credential, no history.
+- **`transport-spool/`** — carries what passed between the users of one machine, through a drop
+  directory per recipient, and only where the operator allowed it.
+
+**The filter is built** - its frame ([`doc/filter.md`](doc/filter.md)) and its detectors for
+encoded data, measured on agents' prose ([`doc/detectors.md`](doc/detectors.md)). **The local transport is built too**, and
+measured end to end against Sokar's host side ([`doc/transport-local.md`](doc/transport-local.md)). **So is the spool
+transport** between the users of one machine, where the operator allowed it
+([`doc/transport-spool.md`](doc/transport-spool.md)). Credentials, personal data
+and payloads spread over several messages are still to come: see [`issues/`](issues/README.md).
+
+It does not protect the agent from what somebody sends it; it stops the agent from sending data out,
+whether by accident, by misconfiguration or because a prompt injection told it to. The one exception
+is a message from outside the operator's own machines, which it also reads on the way in.
+
+Inside it is not an agent at all. No language model, no decision taken at runtime: fixed rules over
+files, and the same verdict every time for the same input. A checker built on a model would be open
+to the same manipulation as the agent it checks, and its verdicts would be neither reproducible nor
+explainable.
+
+Sokar drives both: see Sokar requirement **B14**, which defines the mailbox mounted into a task, the
+adapter contract a transport implements, and what a message may contain.
+
+Java 25, two programs, each with its code and its `.deb` and `.rpm` below it. `-s settings.xml` declares the snapshot repository; it is not optional while
+anything this builds against is a snapshot. More in [`build.md`](build.md).
+
+Nothing here needs a checkout of [Sokar](https://github.com/sokar-ai/sokar). This repository builds
+standalone tools: they read files, write files, and know nothing about Sokar's daemon, its gate or
+its containers. Sokar drives them by placing files where they read them - see Sokar requirement
+**B14**.
+
+Java 25. `-s settings.xml` declares the snapshot repository and keeps a developer's own
+`~/.m2/settings.xml` out of what the build resolves.
+
+Three programs, each a module with its code and its packages below it. The programs do not depend
+on each other:
+
+| Module | Artifact | What it is |
+|---|---|---|
+| `filter/app/` | `sokar-message-sluice-filter` | the filter's code: decides what may pass, knows no transport |
+| `filter/dist-deb/`, `filter/dist-rpm/` | `…-filter-deb`, `…-filter-rpm` | its `.deb` and `.rpm` |
+| `transport-local/app/` | `sokar-message-transport-local` | the local transport's code: carries what passed, decides nothing |
+| `transport-local/dist-deb/`, `transport-local/dist-rpm/` | `…-local-deb`, `…-local-rpm` | its `.deb` and `.rpm` |
+| `transport-spool/app/` | `sokar-message-transport-spool` | the transport between users of one machine, where the operator allowed it ([doc](doc/transport-spool.md)) |
+| `transport-spool/dist-deb/`, `transport-spool/dist-rpm/` | `…-spool-deb`, `…-spool-rpm` | its `.deb` and `.rpm` |
+
+The `dist-*` modules exist only in the `dist` profile. They package a file and build nothing. The
+native binary is not a Maven artifact, so they find it by path, `../app/target/<name>`. Their
+dependency on `app` only orders the reactor.
+
+## What the build is allowed to bring in
+
+**Jackson is the only runtime dependency**, and that is a requirement rather than a preference: the
+fewer libraries parse an attacker's text before the rules see it, the smaller the surface. The chi
+squared test and every other statistic are written here rather than pulled in.
+
+Test scope is JUnit 5 and AssertJ, as in every other Sokar repository.
+
+**Both programs ship as native executables**, like every other Sokar tool. The profile `native`
+needs a GraalVM as `JAVA_HOME` - here `~/.sdkman/candidates/java/25.3.4+1.r25-graalce`. It writes
+`filter/app/target/sokar-message-sluice-filter` and
+`transport-local/app/target/sokar-message-transport-local`, the names Sokar executes. The settings
+follow Sokar's own build: `native-maven-plugin` 1.1.11, no fallback image, full stack traces on a
+build failure.
+
+**The binaries are linked dynamically against glibc and zlib.** What a host needs is the highest
+symbol version a binary uses, not the build host's glibc: measured with `readelf` on 2026-09-18,
+`GLIBC_2.34` and `ZLIB_1.2.2`. A fully static binary would need a musl toolchain. Nothing in either
+program uses the foreign-function API, so that option stays open.
+
+**One package per program and per format**: `sokar-message-sluice-filter` installs
+`/usr/libexec/sokar/sokar-message-sluice-filter`, and `sokar-message-transport-local` installs
+`/usr/libexec/sokar/transports/sokar-message-transport-local`. Those are the paths Sokar's host
+looks in. Each package also carries its CycloneDX bill of materials and its copyright or licence
+file, and depends on `sokar`, `libc6 (>= 2.34)` and `zlib1g (>= 1:1.2.2)`, or on the RPM names
+`rpmbuild` would generate for them.
+
+The technique is Sokar's and the agent repositories'. `jdeb` 1.14 and `de.dentrassi.maven:rpm`
+1.13.0 run in the profile `dist`, **on `verify`, not `package`**: native-image runs on `package`,
+and a packaging plugin there would pack the binary of the build before. Three things hold that:
+
+- **`dist` requires `native` in the same run.** An enforcer rule refuses `-Pdist` alone, so no
+  package holds a binary from an earlier build.
+- **`LinkageIT`**, run by failsafe after native-image and before the packages are written, holds the
+  declared floors (`sluice.glibc.floor`, `sluice.zlib.floor` in the root POM) to the binary. It
+  fails on a library nobody declared or on a symbol version above a floor.
+- **CI runs the binaries unpacked from both formats**, with an empty environment so that no Java is
+  involved, against the fixtures.
+
+**The version**: `1.0.0-SNAPSHOT` becomes `1.0.0~snapshot.<run>`. `~` sorts below the release in
+dpkg and rpm alike, and `-` would sort above it. CI passes its run number. A local build is marked
+`0+local.<timestamp>`.
+
+**Publishing happens only on a push to `main`**, into Sokar's two Artifactory repositories:
+`sokar-dist-deb` under `pool/main/s/<package>/`, and `sokar-dist-rpm` under `snapshots/`. The
+upload uses `jf rt upload`, with `JF_URL` as a repository variable and `JF_ACCESS_TOKEN` as a
+secret. The `.deb`'s properties are what put it into the index. Then the step *"The packages are
+indexed, not merely stored"* reads both indexes back, anonymously and with `-L`, until they name the
+very files just uploaded.
+
+**First published on 2026-09-18** as `1.0.0~snapshot.3`, from CI run 35334467118: all four
+packages uploaded, the index check passing, and both indexes, read back anonymously, listing them
+with their dependencies and the transport's `Provides: sokar-transport`. Before that, both packages
+were installed with `apt` and `dnf` on the two local VMs and on rented Ubuntu and Fedora machines.
+
+**The bill of materials is not made offline.** `cyclonedx-maven-plugin` skips itself in Maven's
+offline mode and only warns, and the packaging then fails for the missing file. Build packages
+online.
+
+The packages are installed on real machines before they are pushed, never only unpacked:
+
+The same with the `.rpm`s and `--os fedora`. The profile `ci-tools` puts Sokar's `sokar-machines`
+on the class path, as the agent repositories do. That tool rents a Hetzner machine, installs Sokar
+from its repository and the candidate packages with the package manager, so `Depends` is honoured.
+It then runs [`buildtools/acceptance.sh`](buildtools/acceptance.sh) as an unprivileged user and
+deletes the machine. `sweep --mine` deletes by the leg's name what a failed run left behind. Both
+credentials reach the tool through its environment, never on a command line: `HETZNER_SSH` is the
+private key's content, not its path.
+
+`buildtools/acceptance.sh` checks what an operator would: each installed package is registered with
+the package manager, its binary sits where Sokar looks, and it works with no Java on the `PATH`. The
+filter refuses a payload and a `raw` part and passes prose. The local transport delivers byte for
+byte. The spool transport attests the owner, and says whether messaging between users is allowed on
+the machine. Whether it carries between users is measured with real users by
+[`buildtools/spool-transport.sh`](buildtools/spool-transport.sh).
+
+`./install-local.sh` after a native build copies the three binaries to `$XDG_DATA_HOME/sokar/filter/`
+and `$XDG_DATA_HOME/sokar/transports/`, where Sokar looks. No Java is needed where they run.
+`--uninstall` removes exactly those three files. It is a shell script because copying three files
+needs no program. Where the packages are installed, they are what Sokar finds under `/usr/libexec/sokar/`.
+
+**Fixtures** for running the filter against something known are in
+[`filter/app/src/test/resources/fixtures/`](filter/app/src/test/resources/fixtures/README.md). A test
+keeps every one of them true.
+
+`CHANGELOG.md`, in [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format, written by hand
+in the same commit as the change. **One sentence per change** - it is a compressed summary of the
+commits it covers, and `git log` is where anyone who wants the reasoning goes.
+
+What was settled and why, newest first. A row is written as part of taking the decision, and the
+full text sits below it. Accepted risks belong here too: what the exposure is, why it is not being
+removed, and what would change the answer.
+
+| Date | Decision |
+|---|---|
+| 2026-09-20 | [Messages reach another machine by federation, not by a git transport](#messages-reach-another-machine-by-federation-not-by-a-git-transport) |
+| 2026-09-18 | [A person's message is accepted, and who wrote a file is the host's check](#a-persons-message-is-accepted-and-who-wrote-a-file-is-the-hosts-check) |
+| 2026-09-18 | [The encoded-data thresholds are measured on agents' prose, not taken from textbook English](#the-encoded-data-thresholds-are-measured-on-agents-prose-not-taken-from-textbook-english) |
+| 2026-09-18 | [A full hash in hex is refused](#a-full-hash-in-hex-is-refused) |
+| 2026-09-18 | [The filter does not learn which transport carries a message](#the-filter-does-not-learn-which-transport-carries-a-message) |
+| 2026-09-18 | [Content detectors sit behind an interface, and the envelope stays ours](#content-detectors-sit-behind-an-interface-and-the-envelope-stays-ours) |
+| 2026-09-18 | [The filter and the transports are separate programs](#the-filter-and-the-transports-are-separate-programs) |
+| 2026-09-18 | [The filter never rewrites a message](#the-filter-never-rewrites-a-message) |
+| 2026-09-18 | [A local transport first, git as a later extension](#a-local-transport-first-git-as-a-later-extension) |
+| 2026-09-16 | [No language model inside the filter](#no-language-model-inside-the-filter) |
+| 2026-09-16 | [Our own A2A model rather than the SDK, and A2A 1.0 only](#our-own-a2a-model-rather-than-the-sdk-and-a2a-10-only) |
+
+## Messages reach another machine by federation, not by a git transport
+
+The git transport is closed unbuilt. Carrying messages between machines through a repository - one
+branch per group, one commit per message, fetch as the arrival mechanism - is not built and will not
+be: the operator's decision, because two transports for one purpose is the second copy this project
+refuses everywhere else. Distribution, history and arrival without binding a port come from a Matrix
+room instead, and the room is the project's conversation.
+
+**What this gives up, and it is accepted:** the shared, ordered, tamper-evident record. Every commit
+hashes its parent, so a branch is tamper-evident to everybody who fetches it; a room is not. Each
+host keeps its own hash-chained log, which is tamper-evident locally and proves nothing to anybody
+else - so two machines cannot settle between them what order things happened in, or that nothing was
+removed.
+
+**What would change the answer:** a requirement that somebody other than the two peers be able to
+verify what passed between them, and in which order. Nothing asks for that today, and the record's
+shape is kept anchorable rather than tied to a transport, so it stays possible.
+
+**The key directory is not lost with it.** The git transport was also carrying the `allowed_signers`
+file that says who may speak for a peer, which the transports here verify against and which
+federation does not replace. It travels in the project repository instead and reaches every host
+through the follow each machine already does for its project file - no new remote and no new
+credential. The mechanism and its reasoning are Sokar's, in **Sokar B14**, and are deliberately not
+restated here.
+
+The thing being checked is an agent that may have been manipulated. A checker that itself asked a
+model would be open to the same manipulation, through exactly the text it is reading, and its
+verdicts would be neither reproducible nor explainable to the agent they are sent back to.
+
+So the filter is deterministic: fixed rules over files, the same verdict every time for the same
+input, and every refusal traceable to one rule with a rule id, a part index and an offset.
+
+**What this gives up**, stated rather than discovered later: a secret described in words rather than
+written out (*"the password is the dog's name plus 77"*) passes, and so does steganography in word
+choice. Those are named as limits in the issue, not as things the filter tries and sometimes catches.
+
+**What would change the answer:** nothing about false positives - a model would be reached for only
+if a measured class of exfiltration gets through that rules cannot describe at all, and then it
+would run beside the rules and be allowed to hold a message, never to release one.
+
+## Our own A2A model rather than the SDK, and A2A 1.0 only
+
+The binding reference is A2A 1.0 (`specification/a2a.proto`, tag `v1.0.1`), whose JSON form is the
+ProtoJSON mapping: no `kind` discriminator, enums in `SCREAMING_SNAKE_CASE`, and one unified `Part`
+carrying exactly one of `text`, `raw`, `url` or `data`.
+
+The official `org.a2aproject.sdk:a2a-java-sdk-spec` (1.3.2.Final read on 2026-09-16) still carries
+`Message.kind()` and separate `TextPart`/`FilePart`/`DataPart` records - the 0.3 shape - and brings
+no serialization at all, so the JSON binding would have to be written here anyway.
+
+For a security filter a parser that sees a different structure than the file actually has is a
+bypass path: the difference between what the model exposes and what is in the bytes is where a
+smuggled field lives. So the model is ours, small, and exactly the 1.0 structure.
+
+**0.3 messages are refused, never converted.** A silent conversion would have to guess how
+`file.bytes` maps onto `raw`, and that field is the one transfer channel this filter exists to stop.
+
+## A person's message is accepted, and who wrote a file is the host's check
+
+The operator's design of 2026-09-16 had the filter refuse every outgoing message that was not
+`ROLE_AGENT`. Sokar B14 then let a person write into a conversation, signed with their own key and
+marked `ROLE_USER` so that the receiving side can tell a person from an agent. The filter refused
+every one of those: measured on Sokar's side on 2026-09-18, where `sokar talk say` could not send at
+all.
+
+**Decided by the operator on 2026-09-18:** the filter accepts `ROLE_AGENT` and `ROLE_USER` and runs
+the same content checks on both. What the old rule really protected - a task must never write a
+message that claims to be from a person - is a property of where the file came from. The filter sees
+only files and cannot know that. Sokar's intake knows it, so **the host refuses a `ROLE_USER` that a
+container wrote into its outbox.** A marker file beside each message was the alternative, and it was
+not taken: it would be a second input the filter has to trust, written by the same host.
+
+**The exposure:** if the host's intake check is missing or broken, a task can pass as a person. The
+filter would still check every word of it; what it would not catch is the claim of authorship.
+**What would change the answer:** a transport that delivers into the filter without passing Sokar's
+intake. Then the role would have to be established some other way before the filter runs.
+
+## The encoded-data thresholds are measured on agents' prose, not taken from textbook English
+
+The first design of the encoded-data detectors took its numbers from the properties of English:
+entropy 3.5 to 4.3 bits per character, a threshold of 4.5 over 128-character windows, and a
+chi-squared test at 1 % significance.
+**Measured on what agents actually write, every one of them was wrong.** Agents write English with
+code spans, paths, rule ids, capitals and hashes in it:
+
+- **Raw entropy** of that prose reached 5.14 bits in 128-character windows, as high as base64. The
+  first run of the detectors refused 27 % of this repository's own documentation. The entropy is now
+  taken over **folded** text: case ignored, whitespace one symbol, punctuation one symbol. Digits
+  stay themselves, because folding them too made base36 indistinguishable from English. Folded,
+  64-character windows of 2916 paragraphs of agent prose stay at or below 4.56, while base64 and base36
+  sit at a median of 4.75 and 4.80.
+- **Chi-squared at a fixed significance** fails a long English text for being long, because real
+  prose never matches a reference table. The statistic is divided by the number of letters instead,
+  which measures how far a text is from English at any length. English stays at or below 1.64 per
+  letter, base64 at 2.69 or more, and the threshold is 2.0.
+- **Numbers, times, IPv4 addresses and a few short commit hashes** are masked before the statistics,
+  because agents quote them constantly.
+
+**The corpora**: this repository's documentation, which is in the repository and kept under test,
+and the agents' coordination channel, which is not in the repository and was measured locally.
+**The exposure:** both are prose by the same kind of writer, so the thresholds fit agents that write
+like these. A mailbox whose agent writes differently can be calibrated (`--calibrate`), and until it
+is, it only reports. **What would change the answer:** a calibration on real traffic that puts the
+English of one mailbox above these thresholds.
+
+Thirty-two hex characters of a payload and an MD5 are the same string, and so are 40 hex characters
+and a commit's full SHA-1. The filter cannot tell them apart and refuses both. Up to eight **short**
+hashes (7 to 12 hex characters) in one text are masked as the way agents name commits.
+
+**The exposure** is the opposite of a leak: an agent that pastes a full hash has its message refused,
+and has to name the commit by its short form. **Why it is not removed:** a whitelist of hash-shaped
+strings would let 16 or 20 bytes of arbitrary data through per string, and any number of them per
+message. **What would change the answer:** a way to tell a real hash from data - a repository the
+filter could look the hash up in - which this filter deliberately does not have.
+
+## The filter does not learn which transport carries a message
+
+The filter moves every accepted message, with its signature, into one directory,
+`filter/accepted/`. The host resolves `metadata.to` to a peer and the peer to a transport, and moves
+the pair into that transport's queue. The original design had the filter write into
+`queue/<transport>/` itself, told which by a `--peer-transport` option.
+
+Resolving a peer is policy, and policy is the host's - the same reason the container never sees an
+address. A filter that knew the destinations could be asked to invent one, and one invocation could
+not accept messages for three peers on three transports. Agreed with Sokar on the channel on
+2026-09-18; the other half is in Sokar requirement B14.
+
+**The exposure:** `accepted/` is one more directory whose content counts as checked. Whoever can write
+there bypasses the filter, exactly as with a transport queue before. **What would change the answer:**
+nothing about convenience - only a transport that needs something from the filter that the host
+cannot give it, which would first have to be argued on the channel.
+
+## The filter and the transports are separate programs
+
+Two modules that do not depend on each other. The filter decides what may pass and has no queue, no
+timer, no address and no knowledge that any particular transport exists; a transport carries what
+passed and decides nothing.
+
+The reason is not tidiness. A transport that could see the rules could be asked to apply them, and
+then the answer to "was this checked?" would depend on which route a message took. Keeping the
+decision in one program means the answer is the same for every transport that will ever be added,
+including ones written by somebody else.
+
+What they share is the directory contract and the message format. Both are written down rather than
+compiled against, so neither module is a library the other links.
+
+It reads a message and moves the file; it does not reformat, re-serialize, normalize or annotate it.
+
+The host signs the exact bytes that leave, and the receiving side verifies those bytes. Anything the
+filter changed - even re-indenting JSON - would invalidate every signature downstream, and the
+failure would appear at the far end as an attribution error rather than as a formatting bug. The test
+for it is a hash of the file before and after a run.
+
+## A local transport first, git as a later extension
+
+The first transport moves a file between two mailboxes on one machine. Git between machines is
+designed and not built.
+
+**Superseded on 2026-09-20**: it is not built at all now - see *Messages reach another machine by
+federation, not by a git transport*. What follows is why it was not built first, which still holds.
+
+On one developer's machine, git would add a repository, a remote or a bare clone, a branch protocol,
+a fetch schedule, a push credential and a shared record - to move a file between two directories on
+the same disk. Every one of those earns its place when machines are apart, and none of them before.
+
+**What the local transport gives up, stated so it is not discovered later:** there is no shared,
+ordered record that a second machine can verify. Each host keeps a hash-chained log, which is
+tamper-evident locally and proves nothing to anybody else. That is exactly what the git transport
+would have added, and it is why the record's shape is kept anchorable rather than tied to a
+transport.
+
+## Content detectors sit behind an interface, and the envelope stays ours
+
+A third-party scanner in the same problem space was surveyed on 2026-09-18. It is open source under a
+permissive licence, written in another language, and built as a proxy that mediates an agent's
+network traffic. What it carries is worth knowing, because several parts of it are things this issue
+would otherwise have to write and then keep current:
+
+- a maintained catalogue of roughly seventy provider credential patterns, with checksum validators
+  for card numbers, IBANs, routing numbers and wallet keys;
+- Unicode de-obfuscation beyond what was sketched here - zero-width and tag characters, homoglyph
+  folding, leetspeak;
+- reassembly of a payload fragmented across several requests, with byte and bit budgets, which is
+  the most expensive feature in this design;
+- regular-expression families for prompt injection, including non-English ones;
+- signed receipts with key rotation and an optional transparency-log anchor;
+- **no language model anywhere in its decision path**, which is the same conclusion reached here
+  independently.
+
+**What it does not carry is most of what the filter's own frame specifies**: the closed A2A schema, the
+refusal of payload parts, the rule that the bytes are never rewritten, the directory contract, the
+per-peer trust decision, and the answer written as a bounce the sending agent already knows how to
+read. Its own detection is also thinner in places this design is explicit about - personal data
+coverage is narrow and country-specific, there is no distribution test against English at all, and
+its core findings block regardless of how an operator configured the action, which contradicts the
+rule here that a directory reports before it blocks.
+
+**The decision.** The filter keeps the envelope, the bytes and the verdict. The *content* detectors -
+what this design calls stages B and C - are reached through one interface, so the catalogue behind
+them can be this project's own, somebody else's, or both. Issue SL04 is that interface.
+
+**Nothing external is adopted before it is measured** against fixtures from this repository, and if
+one is adopted it is pinned, its findings are inputs to the decision model here rather than the
+verdict itself, and the floors and the redaction guarantee stay in this code.
+
+**The exposure, if an external engine is ever adopted:** a second language in a build that has a rule
+about exactly that, its vulnerabilities and its release cadence in the deciding path of a security
+boundary, and a verdict that can change when somebody else edits a rule. The surveyed one is seven
+months old and effectively written by two people, which is fine for a catalogue and uncomfortable for
+a decision. **What would change the answer:** a measurement showing its false-positive rate on clean
+English and whether its cross-message correlation works in a one-shot invocation - it is
+session-scoped, and delegating it may require running a long-lived service beside the daemon, which
+is a cost this product does not otherwise pay.
+
+The frame of the filter checks the envelope. Everything after that is a **content detector** behind
+one interface, run over every text part and every string in `metadata`, keys included. This page
+describes the detectors that catch **encoded data**. Credentials and personal data (issue SL07) and a
+payload spread over several messages (issue SL08) are still to come.
+
+No detector decides. Each one reports findings, the decision model turns them into a verdict, and the
+frame redacts every excerpt before it goes anywhere. See [`decisions.md`](decisions.md).
+
+Every text is normalized once, and every detector sees the same result:
+
+- **Unicode NFKC**, and `\r\n` or `\r` become `\n`.
+- **Invisible characters are removed and reported** as `UNICODE/INVISIBLE_CHARACTER`: zero-width
+  characters, bidi controls, tag characters, the soft hyphen and variation selectors. One or a few
+  are `SUSPICIOUS`; eight or more in one text are a channel and `BLOCKING`. The joiner inside an
+  emoji sequence and the selector after a symbol are how chat writes emoji: they are removed, not
+  reported.
+- **Look-alike letters are folded to Latin** inside a word that mixes Latin with Cyrillic or Greek,
+  and the word is reported as `UNICODE/MIXED_SCRIPT` (`SUSPICIOUS`). *"раssword"* with a Cyrillic
+  `р` and `а` is read as *"password"*.
+
+Every finding points into the **original** text, whatever normalization removed or changed on the
+way.
+
+The statistical checks run over the text with its known-legitimate shapes taken out. Each masked span
+becomes one space:
+
+- a URL's scheme, host and path. The **query and fragment stay**, and so does a path with a segment
+  longer than 48 characters;
+- **up to four** isolated UUIDs. **A chain of UUIDs stays**, because it is hex, and **so does every
+  UUID of a text that carries more than four**, however they are separated: each one is 16 bytes;
+- IPv4 addresses, compact ISO timestamps such as `20260916T082314Z`, numbers of up to thirteen
+  digits, grouped thousands, dates, times, currency amounts and acronyms of up to six capitals;
+- **up to eight** short commit hashes (7 to 12 hex characters). **More than eight stay**: at that
+  count they are a payload.
+
+The encoding signatures see numbers, dates and acronyms, because a run of 0 and 1 is a number to
+everything else. Only URLs, up to four isolated UUIDs, IPv4 addresses and compact timestamps are
+masked for them.
+
+| Detector | Rule | Severity | What it catches |
+|---|---|---|---|
+| `builtin/long-token@1` | `ENCODING/LONG_TOKEN` | `BLOCKING` | a run of more than 35 characters without whitespace or a separator (`/ . _ - ( ) [ ] : ? & = # , ; \| $ @ + ~ * < > { } ' " `` ` `` !`) |
+| `builtin/token-shape@1` | `ENCODING/DIGIT_UPPER_TOKEN` | `SUSPICIOUS` | a word of more than 8 characters, over half digits and capitals, with two digits or few vowels |
+| | `ENCODING/VOWELLESS_TOKEN` | `SUSPICIOUS` | a word of more than 12 characters with under 15 % vowels among its letters |
+| | `ENCODING/SYMBOL_HEAVY_TOKEN` | `SUSPICIOUS` | more than 20 % of `+ / = % _ -`, at least two kinds of them, in a mostly alphanumeric word |
+| | `ENCODING/PUNCTUATION_HEAVY_TOKEN` | `SUSPICIOUS` | more than 20 % of other punctuation, at least three kinds of it |
+| `builtin/entropy@1` | `ENCODING/WINDOW_ENTROPY` | `BLOCKING` | a 64-character window, in steps of 16, above 4.5 bits per character, measured on folded text |
+| `builtin/english-distribution@1` | `ENCODING/LETTER_DISTRIBUTION` | `SUSPICIOUS` | a text of 200 characters or more whose letters are distributed unlike English: chi-squared per letter above 2.0 |
+| | `ENCODING/WHITESPACE_SHARE` | `SUSPICIOUS` | the same, with under 8 % whitespace |
+| `builtin/encoding-signature@1` | `ENCODING/BASE64`, `BASE64URL`, `BASE58`, `BASE32`, `BASE85`, `HEX`, `URL_ENCODING`, `QUOTED_PRINTABLE`, `UUENCODE`, `BINARY_STRING`, `PEM`, `DATA_URI` | `BLOCKING` | the named encoding, from 32 characters on |
+
+**Two different `SUSPICIOUS` rules in one message refuse it** under the default decision policy.
+One rule firing many times still counts once.
+
+**Folded**, for the entropy, means: letters in lower case, one symbol for all whitespace, and one for
+all other punctuation. Digits stay themselves. Raw entropy does not separate the prose agents write
+from encoded data, and folded digits would make base36 look like English. See
+[`decisions.md`](decisions.md).
+
+**Base64 and its relatives are told from identifiers by how they switch case.** Words keep a run of
+lower-case letters after each capital. Random letters switch case every one or two characters.
+Words, numbers and acronyms joined by dashes or underscores are a file name, not base64url.
+
+**A full hash in hex is refused.** Thirty-two hex characters of a payload and an MD5 look the same.
+Name a commit by its short form.
+
+Every threshold is a key, `detector.<name>.<parameter>`. Each detector can be switched off with
+`detector.<name>.enabled=false`. Each rule can be weighed and disabled, and each category re-graded,
+through the `decision.*` keys. An unknown key aborts the start.
+
+| Key | Default | Where it comes from |
+|---|---|---|
+| `detector.longToken.maxTokenLength` | 35 | the longest common English word is about 30 characters |
+| `detector.tokenShape.maxDigitUpperShare` | 0.5 | from the design, not measured on its own |
+| `detector.tokenShape.minVowelShare` | 0.15 | from the design, not measured on its own |
+| `detector.tokenShape.maxSymbolShare` | 0.2 | from the design, not measured on its own |
+| `detector.entropy.threshold` | 4.5 | measured, see below |
+| `detector.entropy.windowSize` / `step` / `minLength` | 64 / 16 / 64 | measured: 64-character windows separated 64 characters of base64 from English, and 128-character windows did not |
+| `detector.distribution.minLength` | 200 | below that a distribution is noise |
+| `detector.distribution.maxChiSquarePerLetter` | 2.0 | measured, see below |
+| `detector.distribution.minWhitespaceShare` | 0.08 | measured, see below |
+| `detector.signature.minLength` | 32 | the shortest payload that must not pass, from the encoded-data design |
+
+It reads a directory of messages, moves nothing, and prints a properties file that `--config`
+accepts:
+
+- how many messages blocking mode would refuse with the current settings, and the findings per rule;
+- for the entropy, the letter distribution and the whitespace share, the distribution over the
+  directory beside the same measure over random base64 generated there and then;
+- a suggested value between the directory's 99th percentile and the encodings' 5th.
+
+Where the two overlap, it keeps the current value and says that the directory cannot be told apart
+from encoded data on that measure. **Calibrate a mailbox on its own traffic before switching it to
+blocking.**
+
+**English that must pass:**
+- **This repository's documentation**: every paragraph of every Markdown file, 262 texts on the day.
+  **None refused.** The corpus is in the repository, and a test keeps the result true. - **The
+  agents' coordination channel**, which is not in this repository: 2869 paragraphs of prose that
+  agents wrote to each other, with commit hashes, paths, rule ids, times and command lines. **One
+  refused (0.03 %)**: a name built from words and a timestamp, `acc-smith-claude-20260912T1830Z`, in
+  a window dense enough to cross the entropy threshold. Of its 458 whole entries, 6 (1.3 %) were
+  refused. One is that same paragraph. The other five were refused for code quoted in them: two
+  camel-case test names of over 35 characters, two shell commands and a key fingerprint.
+
+**Encodings that must not pass:** 500 samples per encoding and length, random bytes cut to 32, 48
+and 64 characters, each inside a sentence of the documentation. **Under 1 % missed for every one**
+of base64, base64url, base32, base58, base85, hex, URL-encoding, quoted-printable, uuencode, PEM,
+data URI, binary string and ciphertext. The worst were base58 and base85 at 32 characters, 3 of 500
+each. A test keeps this true, with a fixed seed.
+
+**What the numbers were measured with**, per threshold, over the 2916 English texts of both corpora:
+
+- **Entropy**, 64-character folded windows: English at a median of 4.03, p99.9 4.42, at most 4.56.
+  Eighty characters of base64 or base36 in a sentence: a median of 4.75 and 4.80.
+- **Chi-squared per letter**, texts of 200 characters and more: English at p99 0.42 and at most 1.64.
+  Base64 at least 2.69.
+- **Whitespace share**: English at least 0.087. Base64 none.
+
+- **Fewer than 32 characters of an encoding**, when no token or window gives it away. Many short
+  pieces over several messages are issue SL08's.
+- **A payload in a URL path** whose segments are each 48 characters or shorter. The path is masked
+  as a legitimate shape. The query and fragment are checked.
+- **Up to eight short hex tokens per text** are masked as commit hashes, and **up to four UUIDs** as
+  ids: about 64 bytes in UUID form per message pass. More than four are refused. Until 2026-09-18
+  the limit did not exist, and 50 UUIDs separated by `, ` passed as ids - 800 bytes in one message.
+  None of the English measured below contains a UUID, so the limit's cost in false positives is not
+  measured yet.
+- **Anything that is not English prose**: another language is distributed differently, and the
+  letter test would refuse it. An exchangeable frequency table per language would lift this.
+- **Code quoted at length** can be refused: long camel-case identifiers, shell commands with many
+  symbols, fingerprints. Calibration shows how often it happens in a mailbox's own traffic.
+
+`sokar-message-sluice-filter` checks the messages an AI agent sends out and lets through only plain
+English prose. Anything that is a data transfer in disguise is refused, and the agent is told why in
+a message of the same kind it sent.
+
+**It is an egress filter.** It does not protect the agent from what somebody sends it; it stops the
+agent from sending data out, whether by accident, by misconfiguration or because a prompt injection
+told it to. Sokar also runs it, in blocking mode, over what arrives from a peer it does not vouch
+for.
+
+**It is a content filter in the delivery path, not a mail server.** It has no queue, no timer, no
+retry, no address it could send anything to, and no knowledge of any transport. It reads a message,
+renders a verdict, answers, and moves the file. **There is no language model inside it**: fixed
+rules, the same verdict every time, every refusal traceable to one rule, a location and an offset.
+See [`decisions.md`](decisions.md).
+
+What it looks for in the text is [`detectors.md`](detectors.md). This page is the frame around the
+detectors: the directories, the envelope, the verdict, the answers and the command line.
+
+Sokar lays out a task's mailbox, and the filter is given its paths. **It creates no directory**, and
+refuses to start when one is missing:
+
+`--mail <dir>` supplies all of these at their places, and each can also be given on its own.
+**`rejected/` and `error/` must be `0700`**, or the filter refuses to start: they hold what it
+refused, secrets included.
+
+**The filter never learns which transport carries a message.** It writes what it accepted into
+`filter/accepted/`, and the host resolves the peer and dispatches from there. **Nothing but the
+filter writes into `accepted/`**, and nothing but the host's dispatch moves from there into a
+transport's queue. What is there counts as checked and is never inspected again.
+
+1. Only `*.json` files are read. Dot files and other names are ignored, which is where a deliverer's
+   `.tmp` and `.part` files are. A file whose size changes within `stabilityDelayMillis` is set aside
+   for the next pass.
+2. Parsed strictly. A duplicate key, trailing content, comments or nesting deeper than 64 levels
+   make it unprocessable.
+3. The envelope is checked. A message id already in `accepted/`, `rejected/` or `sent/` is refused
+   as a duplicate.
+4. Unless the envelope already refused it, every text is normalized and handed to the detectors.
+5. The findings are decided on, and the answer is written into `feedback/`.
+6. The message and its signature are moved, the signature first: into `accepted/`, `rejected/` or
+   `error/`.
+
+**The answer is written before the file is moved.** A crash in between leaves the message to be
+processed again. The worst case is a second answer, never a message silently swallowed. Every write
+is a temporary file and a rename. A move to another filesystem is a copy beside the target and a
+rename, so a reader of any directory sees a whole file or none.
+
+**The bytes are never touched.** The host signs the exact bytes that leave, so the filter reads a
+message and moves it, and never reformats, re-serializes or normalizes the file.
+
+The binding reference is **A2A 1.0**, in its ProtoJSON form. A message has `parts` and `role`; a task
+has `status`.
+
+| What | Rule | Severity |
+|---|---|---|
+| a part with `raw` | `ENVELOPE/RAW_PART_NOT_ALLOWED` | `BLOCKING` |
+| a part with `url` | `ENVELOPE/URL_PART_NOT_ALLOWED` | `BLOCKING`, or `SUSPICIOUS` by `check.urlPartSeverity` |
+| a part with `data` | `ENVELOPE/DATA_PART_NOT_ALLOWED` | `BLOCKING` |
+| a part with two content fields | `ENVELOPE/AMBIGUOUS_PART` | `BLOCKING` |
+| a part with none | `ENVELOPE/EMPTY_PART` | `SUSPICIOUS` |
+| an outer role that is not allowed | `ENVELOPE/UNEXPECTED_ROLE` | `BLOCKING` |
+| `filename` on a text part | `ENVELOPE/FILENAME_ON_TEXT_PART` | `SUSPICIOUS`, `BLOCKING` for a binary extension |
+| another `mediaType` than `text/plain` on a text part | `ENVELOPE/UNEXPECTED_MEDIA_TYPE` | `SUSPICIOUS`, `BLOCKING` for octet-stream, zip or JSON |
+| an id too long or not `[A-Za-z0-9._:-]` | `ENVELOPE/ID_MALFORMED` | `BLOCKING` |
+| `metadata.to` or `.from` not a plain name (letters, digits, `.` `_` `-` `@`) | `ENVELOPE/PEER_NAME_MALFORMED` | `BLOCKING` |
+| metadata too deep or too large | `ENVELOPE/METADATA_TOO_DEEP`, `…_TOO_LARGE` | `BLOCKING` |
+| too many parts, a text too long | `ENVELOPE/TOO_MANY_PARTS`, `…/TEXT_TOO_LONG` | `BLOCKING` |
+| an extension that is not a URI | `ENVELOPE/EXTENSION_MALFORMED` | `SUSPICIOUS` |
+| a field A2A 1.0 does not have | `ENVELOPE/UNKNOWN_FIELD` | `SUSPICIOUS` |
+| a message id seen before | `ENVELOPE/DUPLICATE_MESSAGE_ID` | `BLOCKING` |
+
+**Every string the envelope does not validate goes to the detectors**: text parts, file names and
+media types, every key and value of `metadata` at any depth, extensions, and the values of unknown
+fields. A field name appears in an answer only if it is short and plain. Otherwise it is named by
+its position, `#3`.
+
+**Roles.** The outer message may be `ROLE_AGENT`, a task's, or `ROLE_USER`, a person's
+(`check.allowedRoles`). The content checks apply to both alike. **Who wrote a file is the host's
+check**: Sokar refuses a `ROLE_USER` that a container wrote. Inside a task's `history`, any valid role
+is fine.
+
+**A2A 0.3 is refused, never converted.** A `kind` field or a lower-case enum marks it. A conversion
+would have to guess how `file.bytes` maps onto `raw`, which is the channel this filter exists to
+close.
+
+**A file that is not a message** - empty, not JSON, not A2A 1.0, schema violations, too large - goes
+to `error/`, with its reason beside it in `<name>.error.txt`, and **still gets an answer**.
+Otherwise a deliberately broken file would be a way to force a silent drop.
+
+Findings are `INFO`, `SUSPICIOUS` or `BLOCKING`. The decision model turns them into a verdict, and no
+detector decides.
+
+- **`THRESHOLD`** (default): one `BLOCKING` finding refuses. So do `SUSPICIOUS` findings from
+  `decision.suspiciousCombineCount` **different** rules (default 2); one rule firing many times counts
+  once. `decision.suspiciousPolicy` can be `IGNORE`, `COMBINE` or `REJECT`.
+- **`SCORE`**: each finding weighs `decision.weight.<rule>` times 0.25, 1 or 4 by severity, and the
+  sum refuses from `decision.scoreThreshold` (default 4, one `BLOCKING`).
+- **An envelope finding that is `BLOCKING` always refuses**, and so does a check that could not run:
+  a detector that throws or answers outside its contract (`FRAME/DETECTOR_FAILED`), or a finding that
+  cannot be redacted (`FRAME/UNREDACTABLE_FINDING`). Neither can be weighed, re-graded or disabled.
+- Detector rules can be disabled (`decision.disabledRules`), and their categories re-graded
+  (`decision.severity.<category>`, or `--category X=SEVERITY`).
+
+**Reporting before blocking.** Without `--blocking` the filter only reports: only the envelope
+refuses, and every other message is accepted, with what blocking mode would have refused named in
+its receipt (`wouldReject: true`). A mailbox is calibrated on its own traffic
+([`detectors.md`](detectors.md)) before it blocks. **Where the sender is not trusted, blocking is on
+from the start** - Sokar's inbound check for `external` peers.
+
+**Nothing a finding matched appears in clear text** in an answer, a receipt, a log line or a file
+name. A detector returns offsets, never an excerpt; the frame cuts the excerpt and masks it.
+`redaction.mode` is `PARTIAL` (the first four characters of a match of 16 or more, then at most 12
+stars), `FULL` (`[REDACTED:<category>]`) or `HASH` (a SHA-256 prefix). An explanation that quotes
+eight characters of the match turns the finding into a refusal.
+
+Every file gets one answer in `feedback/`, named `<timestamp>--<its own message id>.json`: a
+**receipt** when accepted, a **rejection** otherwise. `receiptOnApproval=false` switches receipts
+off. An answer is itself a valid A2A 1.0 message with `ROLE_AGENT`:
+
+- a **text part** listing every finding: severity, rule, location, offsets, masked excerpt and the
+  reason in English;
+- a **`data` part** with `decision` (`approved` or `rejected`), `mode` (`blocking` or
+  `reporting`), `wouldReject`, `decidingRule`, the message id, `checkedAt`, `tool` (name and
+  version), the detectors that ran, and every finding with `ruleId`, `stage`, `severity`,
+  `category`, `location`, `partIndex`, `start`, `end`, `redactedExcerpt`, `reason` and `detector`;
+- `contextId` and `taskId` of the original, and its id in `metadata.inReplyToMessageId`, only when
+  they passed the id check.
+
+For a file that is not a message, the `data` part has `rejectionKind: "unprocessable"`, the
+`ruleId`, `sourceFileName` (only if it is 64 plain characters or fewer, otherwise a hash of it),
+`sourceSha256`, `sourceSizeBytes`, and a `recoveredMessageId` when a plausible one was found. **It
+never carries an excerpt of the file.** A parser's error message is reduced to line and column,
+because some quote the input.
+
+**An answer run back through the filter** is refused for its `data` part and for nothing else. The
+tests hold that.
+
+**Exit codes:** 0 everything accepted, 1 something refused or unprocessable, 2 a technical error
+or a configuration that cannot be used. **One instance at a time**: a second exits with 2 and names
+the first one's pid. `--watch` runs a pass whenever a file arrives, and at least every
+`watchIntervalMillis`.
+
+**Configuration**, later sources beating earlier: defaults, `--config` (a properties file),
+environment variables (`SOKAR_MSGSLUICE_` and the key in upper case with dots as underscores), and
+`--<key> <value>`. **An unknown key aborts the start**, and the effective configuration is logged at
+startup, each key with where its value came from. The keys of the frame are the directories,
+`blocking`, `receiptOnApproval`, `stabilityDelayMillis`, `watchIntervalMillis`, `check.*`
+(`allowedRoles`, `urlPartSeverity`, `maxParts`, `maxTextLengthPerPart`, `maxFileSizeBytes`,
+`maxIdLength`, `maxMetadataDepth`, `maxMetadataChars`), `decision.*` and `redaction.mode`. The
+detectors' keys are in [`detectors.md`](detectors.md).
+
+**The agent card** is the filter's self-description in the shape of an A2A 1.0 `AgentCard`: its name
+and version, `text/plain` in, text and JSON out, one skill `data-leak-check`, and the incoming
+directory as a `file:` URI with `protocolBinding` `FILE`. It is printed from the configuration the
+filter would run with, and says whether that instance blocks or only reports. It is a
+self-description, not a card anybody could discover and call, because the filter binds no port.
+
+1. **The agent has no other way out.** It can send only by writing into its mailbox. An egress filter
+   that can be sent around checks part of the traffic while looking like it checks all of it.
+2. **Nothing but the filter writes into `accepted/`**, and nothing but the host's dispatch into a
+   transport's queue.
+
+On 2026-09-18, on the development machine: 5000 messages of 2 KB went through in one blocking pass
+at about 2 ms each, all detectors included. The frame and envelope alone took under 0.1 ms. A second
+instance started while a first was watching exited with 2 and named the first one's pid. The native
+binary needs about 20 MB of memory.
+
+## Known limits, and what each would take
+
+| Limit | What would lift it |
+|---|---|
+| No A2A protocol operation, files only | a transport adapter; the checks are already transport-independent |
+| A2A 1.0 only, nothing from 0.3 | an explicit, lossless conversion in front |
+| A secret described rather than written (*"the password is the dog's name plus 77"*) | an intent check by a model - which this filter refuses to be, so it stays a stated limit |
+| Steganography in word choice, an acrostic | out of scope |
+| One instance at a time | a claim protocol through an atomic rename into a working directory |
+| A duplicate is found only among `accepted/`, `rejected/` and `sent/`; inbound, Sokar empties those between messages | Sokar's own duplicate check, by id |
+| **`accepted/` and the transport queues are never re-checked**: whoever can write there bypasses the filter | write permission for the filter and the host's dispatch alone, and a reconciliation of the queues against the corpus |
+
+`sokar-message-transport-local` carries a message from one task's mailbox to another **on the same
+machine**, by writing a file. It has no network, no credential, no history and no revision log. It
+is the whole of what a developer with several tasks on one laptop needs.
+
+It implements the adapter contract of Sokar requirement **B14**. Sokar finds it at
+`$XDG_DATA_HOME/sokar/transports/` or `/usr/libexec/sokar/transports/`.
+
+| Call | What it does |
+|---|---|
+| `describe` | prints one JSON object: `scheme` `local`, `poll` false, `confirms` `handover`, `max_bytes`, and `credentials` and `hosts`, both empty. It reads nothing. |
+| `check` | whether it can run on this machine. Nothing on stdout, a reason on stderr; exit 0 usable, 2 not. |
+| `send <message> <signature> --to <inbound>` | writes the pair into the recipient's `inbound/tmp/` and renames both into `inbound/`. Prints its receipt as one JSON object. |
+| `poll`, `receipt` | not implemented, and `describe` says so: delivery is a rename, so there is nothing to fetch or confirm later. |
+
+**Exit codes of `send`, fixed by Sokar B14:** 0 handed over, 75 temporary (the host moves the pair to
+`deferred/` and tries again), anything else permanent (refused back to the sender). This adapter
+answers 1 for a refusal and 2 for a call outside the contract.
+
+**Nothing is read from standard input.** Messages are files, and a transport that read a stream
+would tempt somebody to stream a message through it.
+
+- **The host resolves every path.** `--to` is the absolute path of the recipient's `mail/inbound/`,
+  and the adapter derives no path and looks up no name. A relative path is refused.
+- **It moves bytes and never parses them.** The host signs the exact bytes, so a transport that
+  parsed a message could change one. A changed byte arrives changed, and the recipient's host holds
+  it because the signature no longer matches.
+- **It writes into one place.** That place is the recipient's `inbound/`, the signature first, so a
+  reader never sees a message without the signature it is checked against. It never removes anything
+  from its own queue and never writes into `sent/`. On exit 0 the host moves the queued pair on.
+- **It creates nothing.** The host creates the mailbox and every directory in it. If `inbound/tmp/`
+  is missing, the mailbox is half made or being torn down, so the answer is 75. Creating the
+  directory would hand a message into a mailbox nobody reads, and report it delivered.
+- **The same message twice arrives once.** A retry after a crash between the rename and the host's
+  move finds the same name with the same bytes and answers 0 without writing again. The same name
+  with different bytes is a permanent refusal.
+- **A missing destination is only "the destination does not exist".** Whether that means
+  `NO_SUCH_PEER` or `PEER_GONE` is the host's to say, because the host holds the peer table.
+- **Only the same Unix user.** Sokar runs as a user unit, one installation per user, so two users on
+  one machine are two hosts with two signing identities. A mailbox owned by another user is refused
+  permanently. The refusal is enforced, not only documented.
+- **Nothing it writes is readable by another user**: files `0600`.
+
+On 2026-09-18, Sokar's host side and both programs of this repository ran against each other on one
+laptop, with the 17 fixtures then in `filter/app/src/test/resources/fixtures/`. All 17 were signed at
+intake, and each got an answer from the filter. Four passed: the two `accept-` fixtures, and the two
+`detector-` ones, because the host runs the filter in reporting mode. Those four were dispatched,
+sent and delivered into the peer's `inbox/new/`. None of the nine refused originals reached the
+peer's mailbox. When one character was changed in an arrived file, delivery held it rather than
+handing it to the agent.
+
+`error/` held twelve files after that run, not four: each unprocessable fixture with its
+`.error.txt` and its signature beside it. That count is not a defect.
+
+`sokar-message-transport-spool` carries a message between the Sokar installations of **different
+Unix users on one machine**. Each user has one installation, one mailbox root and one signing key.
+The message goes through a drop directory per recipient: every member of the group `agents` may
+write into it, and only the recipient may read it. The [local transport](transport-local.md) is not
+changed. It stays within one user.
+
+It implements the adapter contract of Sokar requirement **B14**. Sokar finds it at
+`$XDG_DATA_HOME/sokar/transports/` or `/usr/libexec/sokar/transports/`, and its packages provide
+`sokar-transport`.
+
+**Refusing another user is the default.** The operator decided on 2026-09-18 that messaging
+between users exists only where the operator has configured and allowed it for that machine. That
+is an option of Sokar's setup script, `--between-users on`, and it creates the drops. Without it
+there is no `/var/spool/sokar/drop/`. `send` then refuses every message permanently: *"Messaging
+between users is not allowed on this machine."* `check` exits 2 and says the same. Installing the
+package allows nothing. `--between-users off` removes the drops again.
+
+A user's own peers still have to name another user's address before anything is sent there. The
+machine allows messaging between users, and each project chooses whom it talks to.
+
+| Call | What it does |
+|---|---|
+| `describe` | one JSON object: `scheme` `spool`, `poll` true, `confirms` `handover`, `max_bytes`, `credentials` and `hosts` empty, and `attests` `["owner"]`. |
+| `check` | exit 0 when the drops exist, 2 with the reason on stderr when they do not. |
+| `send <message> <signature> --to <account>` | drops the pair into the recipient's drop. Prints its receipt as one JSON object; exit 0, 75 or 1. |
+| `poll --into <inbound>` | takes everything out of this account's own drop into `inbound/`. Prints `{"received": n, "refused": [...]}`. |
+
+`--to` carries the account name, which is the peer's address `spool:<account>` with its scheme
+removed. The transport checks the name as a POSIX account name before it becomes a path, so
+`../../etc` is refused. `poll` is not told where the drop is; it runs as the recipient and finds its
+own. For tests only, `--root <dir>` right after the verb moves the whole layout. The host never
+passes it. Nothing is read from standard input.
+
+Root creates these once, with Sokar's setup script, for each user on a machine where messaging
+between users is allowed:
+
+- **`0730`**: the group may create entries and pass through, but **not list**. A sender can drop a
+  file and cannot see what anybody else dropped.
+- **The sticky bit**: only a file's owner or the directory's owner may delete or rename it. Senders
+  cannot remove each other's files, and the recipient may take everything out.
+- **The default ACL**: every file dropped inherits `user:alice:rw` and `group::---`. The recipient
+  can read it, and no member of the group can, not even knowing its name.
+- **`keys/<user>/` belongs to that user**, created by root with the drop. With one shared, sticky
+  `keys/`, a user could create `keys/bob.pub` before Bob does, and Bob could never replace it. A key
+  counts only if its file and its directory are owned by the user they are named after.
+- **Pitfall one, measured: dropped files are `0660`.** With an ACL, a new file's mask comes from the
+  group bits of its mode. A file created `0600` gets `mask::---`, and the recipient can read nothing.
+  `0660` gives `mask::rw-`, and the default ACL's `group::---` still keeps the group out.
+- **Pitfall two, measured: the default ACL goes on `tmp/` and `new/` only, set after they exist.** A
+  directory created inside one with a default ACL inherits it as its access ACL, `group::---`
+  included, and then no member can drop anything.
+
+1. The signature and then the message are written into `drop/<recipient>/tmp/` under unique names,
+   `0660`, and renamed into `new/` as `<sender>--<name>`, the signature first. The sender's name
+   keeps two senders' messages apart. It proves nothing; the owner the kernel records does.
+2. Exit 0 means handed over. 75 means temporary: the drop could not be written for now. A permanent
+   refusal comes when the drops do not exist, when the recipient has no drop, or when the account is
+   not in `agents` and may not send to other users.
+
+The same name already dropped by this account answers 0 without writing again. The same name owned
+by another account is a permanent refusal.
+
+`poll`, as the recipient, run by the recipient's host once per pass:
+
+1. For each message in `new/`, **read its owner while it is still in the drop**. The drop and a home
+   directory are often different filesystems, so the move into `inbound/` is a copy, and after it the
+   original owner is gone.
+2. Write `<name>.owner` beside the pair, one line: `<uid> <name>`, for example `1004 bob`. **The
+   recipient's own `poll` writes it, never the sender.** No `.owner` is written when the message and
+   its signature have different owners.
+3. Move the files into `inbound/` through its `tmp/`: the `.sig` and `.owner` first and the message
+   last. Then remove them from the drop.
+
+What is not a regular file, such as a link somebody planted, is removed along with its signature
+and never read. A name already in `inbound/` with other bytes is left in the drop and reported as
+refused.
+
+The host then checks two things. **The owner must be the user the peer is registered as**: `spool:bob`
+needs `bob`, and the uid must be bob's. **The signature must verify against a key that bob owns.**
+If either check fails, the message is held and not delivered. The host requires a `.owner` from a
+transport that attests the owner, and reads one that is present whoever left it. A missing `.owner`
+where one was promised is a hold. The host attributes a message to this transport by listing
+`inbound/` before and after the poll. It does not use `poll`'s own report for that.
+
+**Two accounts on one machine are `external` to each other by default**, as Sokar B14 has it in its
+section *"Across Unix users on one machine"*. A peer whose `trust` is not declared reads as
+`external`, so a message that arrives by spool runs through the recipient's filter with
+`--blocking`. The signature proves the account. It does not prove that the account ran a filter,
+because a user can write into a drop with their own tools. `vouched` is something an operator may
+declare for a peer. The machine never concludes it from two accounts being on it. This transport
+takes no part in that decision.
+
+On 2026-09-18, all of these were measured with real Unix users, never one user under two names:
+
+- **The permission scheme**, by [`buildtools/spool-permissions.sh`](../buildtools/spool-permissions.sh)
+  on the Ubuntu VM with four users (three in the group, one outside it). All 18 steps did what they
+  must. A member cannot list another's drop, read, overwrite, rename or delete a file in it, or write
+  into another's key directory. A user outside the group cannot drop anything.
+- **The transport**, by [`buildtools/spool-transport.sh`](../buildtools/spool-transport.sh) with the
+  native binary. Without drops, a send is refused as not allowed. Bob's message reaches Alice with
+  `.owner` naming bob. Carol's message claiming to be Bob is attested as Carol's. Dave, outside the
+  group, is refused. Carol's planted link is removed with its signature and nothing is read through
+  it. Carol cannot read Bob's dropped message.
+- **The packages**, on rented Hetzner machines with Ubuntu and Fedora, by `buildtools/acceptance.sh`.
+- **End to end, through both halves**, by Agent Sokar on the Ubuntu VM. A message went from the
+  account `sok-ben` to `sok-ann`: through the filter, `send` by spool, `poll`, the owner check, and
+  delivered. Nothing in this transport needed changing. Both peers were declared `vouched` for
+  that run, so it did not exercise the inbound check.
+
+- **One world-writable directory**: everybody could read everybody's messages.
+- **A socket with `SO_PEERCRED`**: it attests the sender just as well, but it needs a daemon
+  listening for every user, and it breaks the rule that everything here is files.
+- **Moving into the recipient's own mailbox**: that needs write access to another user's home, which
+  is exactly the permission Sokar B14 refused to invent.
+
+| Limit | What would lift it |
+|---|---|
+| Root can read every drop | nothing on one machine; the design does not promise otherwise |
+| A member of `agents` can fill another's drop | Sokar's per-peer daily budget, and a quota for the group |
+| One machine only | the Matrix transport, which is its own adapter and not this one extended |
+
+One message per file, for running the filter against something known - in this repository's tests
+and on Sokar's host side. `FixturesTest` runs every one of them in both modes, so a file here stays
+true as the code changes.
+
+| Prefix | Reporting mode (the default) | Blocking mode (`--blocking`) |
+|---|---|---|
+| `accept-` | accepted | accepted |
+| `detector-` | accepted, and the receipt names the finding | refused by a detector |
+| `envelope-` | refused | refused |
+| `unprocessable-` | moved to `error/` and answered | moved to `error/` and answered |
+
+Every message carries a unique `messageId`, so the whole set can go through one mailbox in one pass.
+The payload in the `detector-` files is 64 characters of base64 and not a real secret. None of these
+files is signed: sign them on the host as a message from a task would be.
+
+What is open in this repository, ordered by what to do next rather than by number. The number is
+identity, not sequence.
+
+| # | Status | Blocked by | What it covers | Open questions |
+|---|---|---|---|---|
+| [SL14](SL14-Check-The-Code-Against-The-House-Skills.md) | open | — | The Java, the poms and the shell files that stay, read against the house skills; every finding fixed with a failing test or opened as an issue. | 0 |
+| [SL07](SL07-Refuse-Credentials-And-Personal-Data.md) | open | — | Credentials and personal data, caught by a catalog of pattern, context and checksum. | 0 |
+| [SL08](SL08-Refuse-A-Payload-Spread-Over-Several-Messages.md) | open | — | A payload cut into pieces and sent over several messages, caught by correlating against what the task already sent. | 1 |
+| [SL04](SL04-An-External-Detector-Measured.md) | open | — | Somebody else's detector catalog behind the interface, measured before anything is adopted. | 2 |
+| [SL11](SL11-Refuse-A-Pointer-To-Something-That-Is-Gone.md) | open | — | A test that refuses a link to an issue's file, and a citation carrying an index link whose issue is gone. | 1 |
+| [SL12](SL12-Refuse-A-Description-That-Stopped-Being-True.md) | open | — | A test that refuses a description contradicted by something the build can read - the modules named against the modules that exist. | 0 |
+| [SL13](SL13-Refuse-A-Requirement-Number-In-Code.md) | open | — | A test that refuses a requirement or issue number in anything that ships or executes. | 0 |
+
+**Status** means: `open` - nobody is on it. `in progress` - somebody is. `handed on` - the work
+belongs to another repository and this row tracks what has to change here afterwards. `blocked` -
+waiting on something else, and **Blocked by** names it: an issue here by its number, a Sokar
+requirement as `Sokar B<n>`.
+
+`filter/` decides what may pass and knows no transport. `transport-local/` and `transport-spool/`
+carry what passed and decide nothing. They do not depend on each other: what they share is the
+directory contract and the message format, both written down rather than compiled against.
+
+Nothing here is blocked by Sokar: these are programs that read and write directories. **Sokar
+requirement B14** is the other half - the mailbox mounted into a task, who feeds this filter, which
+transport a peer uses, and what may be in a message in the first place.
+
+# SL04 — An external content detector, measured before it is adopted
+
+**Priority:** 5
+**Opened:** 2026-09-18. Narrowed the same day: the interface itself and the built-in implementation
+behind it moved into the filter's frame ([`doc/filter.md`](../doc/filter.md)), on the operator's
+instruction that the interface is part of the filter's frame. What stays here is the external
+implementation.
+**Depends on:** the detector interface, built (see [`doc/filter.md`](../doc/filter.md)). The
+built-in detectors to measure against are in [`doc/detectors.md`](../doc/detectors.md), and
+[SL07](README.md) adds more. The reasoning is in [`doc/decisions.md`](../doc/decisions.md).
+
+The envelope checks, the decision model, the answer format and the directory contract are this
+repository's own work and are what Sokar leans on. The **catalog** behind the content checks is not
+special: credential patterns age as providers invent new prefixes, de-obfuscation is a specialist's
+game, and fragment reassembly is expensive to build and to keep honest.
+
+The frame puts one interface between the two. This issue is about putting **somebody else's**
+catalog behind it, and it is only worth doing once a measurement says it catches something ours
+does not.
+
+- **An external implementation is a separate module**, invoked as a subprocess, pinned by version and
+  by digest, with what it is and which version answered recorded in every receipt - so a verdict can
+  still be explained a year later.
+- **Fail closed**, as for every detector: absent, timed out, crashed or answering outside its
+  contract means the message is not accepted.
+- **Its findings pass through the frame's redaction** like any other detector's, and it can neither
+  release a message nor turn a report into a block.
+
+- One external implementation, behind the interface, **measured** on fixtures from this repository:
+  false positives against a corpus of clean English messages, catches against the negative samples
+  per category, and the cost per message.
+- A measured answer to whether cross-message correlation can be delegated at all in a one-shot
+  invocation, or whether it needs a long-lived service beside the daemon - which decides the shape of
+  [SL08](README.md).
+
+- An external implementation that is absent, hangs past its timeout, exits non-zero or prints
+  something unparseable **must** each stop the message from being accepted - asserted on what reaches
+  the accepted directory, not on a log line.
+- Swapping implementations **must not** change any answer's structure: the same fixture through both
+  produces findings of the same shape, differing only in rule ids and what was caught.
+
+- **Whether correlation is delegable.** In the scanner surveyed for the decision it is session-scoped
+  and lives inside a long-running proxy. If that is the general shape, correlation stays a built-in
+  and only the single-message detectors are pluggable.
+- **Whether a second language in the build is acceptable at all**, given Sokar B53. A subprocess is
+  not a library, but it is still something to package, pin, patch and put in the bill of materials.
+
+# SL07 — Refuse credentials and personal data
+
+**Priority:** 3
+**Opened:** 2026-09-18, split out of issue 001 (closed the same day) on the operator's instruction.
+**How it would be built** is
+[SL07-Refuse-Credentials-And-Personal-Data_design.md](SL07-Refuse-Credentials-And-Personal-Data_design.md).
+**Depends on:** nothing open. The detector interface is built; see [`doc/filter.md`](../doc/filter.md).
+
+The second of the three things the filter exists to catch: **keys, API tokens, private keys,
+connection strings, and personal or financial data.**
+
+Here the principle of the encoded-data checks ([`doc/detectors.md`](../doc/detectors.md))
+inverts. A credential looks statistically like ordinary text, so it is not found by asking whether
+the text is English; it is found by a targeted catalog of **pattern, surrounding context and
+checksum**. The checksum is what separates a finding from noise.
+
+- Every text part, and every string in `metadata`, is checked against the catalog, through the
+  detector interface and nothing else. **It always sees the original text**, so a token
+  inside a URL's query string cannot slip through the masking the encoded-data checks use.
+- Every category can be switched on or off and re-graded between `INFO`, `SUSPICIOUS` and
+  `BLOCKING`, with the defaults in the design.
+- Known test values - `4111 1111 1111 1111`, `AKIAIOSFODNN7EXAMPLE` - are in an extensible list and
+  count as `INFO` only.
+- A context word alone can carry a finding: *"my password is hunter2"*.
+
+- **One sample per category** of the catalog inside a natural English sentence (*"Sure, the key is
+  AKIA…"*) **must** be refused in blocking mode.
+- A credential in `metadata`, not in a text part, **must** be refused.
+- Invalid credit card numbers, IBANs and JWT headers **must not** cause a refusal - the checksum is
+  what separates a finding from noise.
+- The rejection for every sample **must not** contain the matched value in clear text.
+- **Rates**: false positives under 1 % against the same clean English the encoded-data checks are
+  measured on, named in [`doc/detectors.md`](../doc/detectors.md).
+
+# SL07 — Refuse credentials and personal data, design
+
+How [SL07](README.md) would be built. **Nothing here exists yet**, and none of it has been measured.
+Moved here unchanged from the design of the original issue 001, where it was stage B, step 5, and
+the catalog.
+
+**Each rule** (~1 ms for all of them) - here the principle inverts, from anomaly detection to
+targeted matching, because a credential looks statistically like ordinary text. Every rule combines
+three signals: a **pattern** (`AKIA[0-9A-Z]{16}`, `ghp_…`, `-----BEGIN … PRIVATE KEY-----`, IBAN,
+card format), the **context** within ±40 characters (`password`, `secret`, `token`, `apikey`,
+`credential`, `ssn`, …), which both raises severity and catches the cases where only the context
+gives it away (*"my password is hunter2"*), and a **validation** wherever one exists - Luhn for
+cards, MOD-97 for IBANs, structural decoding for a JWT. The validation is what keeps the false
+positive rate down.
+
+**It always sees the original text**, never the masked text of the encoded-data checks
+([`doc/detectors.md`](../doc/detectors.md)), so a token inside a URL's query string cannot slip
+through.
+
+Every category can be switched on or off (`enabledCategories`) and re-graded freely between `INFO`,
+`SUSPICIOUS` and `BLOCKING` (`severityOverrides`, CLI `--category EMAIL=BLOCKING`). The defaults
+below follow one line: `BLOCKING` for data that has no legitimate place in a natural-language message
+and whose escape does immediate harm; `SUSPICIOUS` for data that may be legitimate depending on the
+business; `INFO` for what is no reliable signal alone.
+
+**Credentials.** `PRIVATE_KEY` (header/footer pair), `CLOUD_KEY` (AWS `AKIA…`/`ASIA…`, GCP service
+account JSON, Azure connection string), `VCS_TOKEN` (`ghp_`, `glpat-`, npm, PyPI), `API_KEY_GENERIC`
+(high entropy ≥ 20 characters **with** a context word), `PASSWORD` (context pattern), `JWT` (three
+base64url segments whose header decodes to JSON with `alg`), `CONNECTION_STRING` (URI parse with a
+credential part), `SSH_AUTH` - all `BLOCKING`. `CERTIFICATE` and `HASH` are `SUSPICIOUS`.
+
+**Personal and financial.** `CREDIT_CARD` (Luhn + IIN), `IBAN` (MOD-97) and `NATIONAL_ID` are
+`BLOCKING`; `EMAIL`, `PHONE`, `IP_ADDRESS` and `DATE_OF_BIRTH` are `SUSPICIOUS`; `POSTAL_ADDRESS` is
+`INFO`. **`EMAIL`/`PHONE` is the practical dial**: contact data is a legitimate part of many business
+processes, and a strict data-protection reading puts it on `BLOCKING`.
+
+**Infrastructure.** `INTERNAL_HOSTNAME` (configurable suffixes), `FILE_PATH`, `STACK_TRACE`,
+`SQL_STATEMENT` - `SUSPICIOUS`.
+
+**False alarms.** Known test values such as `4111 1111 1111 1111` or `AKIAIOSFODNN7EXAMPLE` are in an
+extensible `dummyValues` list and count as `INFO` only.
+
+Redaction is not this issue's: the frame ([`doc/filter.md`](../doc/filter.md)) masks every finding, whichever detector
+produced it, and a detector returns offsets rather than excerpts.
+
+## Known limits, and what each would take
+
+| Limit | What would lift it |
+|---|---|
+| Secret patterns age as new token prefixes appear | load the pattern catalog from an external, versioned resource - or an external detector behind the interface, which is issue [SL04](README.md) |
+| A secret described rather than written | nothing within the rule against a language model; stated in [`doc/filter.md`](../doc/filter.md) |
+
+# SL08 — Refuse a payload spread over several messages
+
+**Priority:** 4
+**Opened:** 2026-09-18, split out of issue 001 (closed the same day) on the operator's instruction.
+**How it would be built** is
+[SL08-Refuse-A-Payload-Spread-Over-Several-Messages_design.md](SL08-Refuse-A-Payload-Spread-Over-Several-Messages_design.md).
+**Depends on:** nothing open. The frame and the corpus are built ([`doc/filter.md`](../doc/filter.md)), and so are the encoded-data checks
+([`doc/detectors.md`](../doc/detectors.md)) for the fragment signals it correlates.
+
+The third of the three things the filter exists to catch: **the same payload cut into pieces that
+are each unremarkable and sent one at a time.** No single message is refused by the encoded-data
+checks or by [SL07](README.md); together they are a file.
+
+It is a correlation over everything already let through for that task. This is the one detector that
+needs more than the text in front of it, which is why the variant of the detector interface
+that carries the corpus is shaped here, against a real detector.
+
+- Messages are correlated over `contextId`, `taskId` and `metadata.thread` against **what this task
+  has already sent**, so a payload split over several messages is caught at the latest when the
+  accumulated size crosses the threshold, and the refusal names every message involved.
+- The corpus lives with the task's mailbox and dies with it. **The accepted gap:** a sender that
+  spreads its pieces over two tasks it started itself is seen by neither.
+- A persistent index over the corpus, written forward incrementally and rebuildable at any time. It
+  is a cache, never the source of truth, and it holds fragment metadata only - never full text.
+- What one check reads is capped, so the cost per message does not grow with the life of the task.
+
+- A ZIP or a PEM file, base64-encoded and spread over 2, 5, 20 and 100 messages of one task, **must**
+  be refused at the latest when the threshold is crossed.
+- **200 real English messages** in one thread **must** produce no correlation finding at all.
+- Scenario directories with a pre-filled corpus - with and without sequence markers, with noise
+  messages in between, and with messages that have no `contextId` at all - each have a stated
+  expected outcome, and the test **must** fail with the detector switched off.
+- The index deleted between two runs **must** give the same verdicts after it is rebuilt.
+
+- **Whether correlation can be delegated at all** to an external engine in a one-shot invocation, or
+  needs a long-lived service. It is the question [SL04](README.md) leaves open, and the answer decides
+  whether this detector is only ever built-in.
+
+# SL08 — Refuse a payload spread over several messages, design
+
+How [SL08](README.md) would be built. **Nothing here exists yet**, and none of it has been measured.
+Moved here unchanged from the design of the original issue 001, where it was stage C.
+
+An attacker can cut a file or a secret into pieces that are each unremarkable. `sent/` holds
+everything accepted so far, and A2A's `contextId`/`taskId` give the grouping for free, which makes
+this far more solid than a heuristic over file names.
+
+Grouping is `contextId`, then `taskId`, then `referenceTaskIds`, falling back to a time window when
+none is present. Order is arrival order in `sent/`, refined by explicit sequence markers in the
+text (`part 3/12`). The fragment index per accepted message holds only fragment metadata - offset,
+length, alphabet, entropy, hash - never full text.
+
+| Rule | What it catches |
+|---|---|
+| `AccumulatedPayloadRule` | the sum of suspicious fragment characters per context: 20 characters are harmless, 40 × 20 are a file. Default threshold 512. |
+| `ConsistentAlphabetRule` | fragments across messages of one context using exactly the same alphabet throughout |
+| `ReconstructionRule` | the fragments concatenated in the determined order, decoded, and checked for **magic bytes** (`MZ`, `ELF`, `PK`, `%PDF`, `\x89PNG`), a PEM block or a secret pattern - the refusal then names every `messageId` involved |
+| `SplitSecretRule` | a secret that only exists once assembled: PEM header in message 7, body in 8-14, footer in 15; or an AWS key id and its secret key in separate messages |
+| `SequenceMarkerRule` | explicit continuation markers beside suspicious fragments; also supplies the ordering |
+| `NearDuplicateRule` | many messages with nearly identical sentence structure and a changing payload share - a script rather than a dialogue, found with SimHash |
+| `BurstRateRule` | a conspicuous cluster in time; `SUSPICIOUS` only, never blocking on its own |
+
+What one check reads is capped (default: the last 500 messages, or 30 days).
+
+| Parameter | Default | Where it comes from |
+|---|---|---|
+| `accumulatedPayloadThreshold` | 512 | from there on a meaningful file transfer is possible |
+| `contextHistoryLimit` / `MaxAge` | 500 messages / 30 days | bounds the work per check, not the corpus |
+
+`--rebuild-index` rebuilds the index from the corpus and exits. The index lives in
+`filter/.index/`, is a cache, and is never what a verdict is read from when it disagrees with the
+corpus.
+
+## Known limits, and what each would take
+
+| Limit | What would lift it |
+|---|---|
+| Correlation only over `contextId`/`taskId` or a time window | sender identity from `metadata` as a further grouping key |
+| Reconstruction tries few orderings | greedy reconstruction along decodable fragment boundaries |
+| The corpus grows for the life of the task | partition it by date; the index stays the working structure |
+| Pieces spread over two tasks of the same operator | a corpus shared across tasks - which would make one task's traffic readable to the check of another, so it is an accepted gap |
+
+# SL11 — Refuse a pointer to something that is gone
+
+**Priority:** 6 - the documents are clean today; this keeps them so.
+**Opened:** 2026-09-20
+
+The shared block requires linking to a requirement by its number and to the index, never to its
+file, and says: *where a repository can enforce this with a test, it does*. This repository has a
+build to hang one on and does not yet.
+
+## Why it is worth a test rather than care
+
+On 2026-09-20 this repository carried **five** dangling pointers at once. Two were made that
+morning by closing the git transport - a decision citing an issue that had just been deleted - and
+three had been sitting in `doc/` for days:
+
+doc/decisions.md   "The design of issue 006 took its numbers from..."     006 deleted
+    doc/decisions.md   "most of what issue 001 actually specifies"            001 deleted
+    doc/detectors.md   "the length issue 006 set for a payload"               006 deleted
+
+All five are repaired. **None was found by a check**: two were found by grepping for the issue being
+deleted, three by searching after the defect had been named in the channel. Four repositories found
+the same defect by accident on the same morning.
+
+1. **A link to an issue's own file is refused from anywhere but `issues/README.md`.** The index
+   names files because that is what an index is.
+2. **A citation is classified by its shape, not by its sentence.** The predicate settled in the
+   channel on 2026-09-20, all three rows:
+
+carries an index link                    a pointer to this repository -> must resolve
+       names a repository beside the number     a cross-repository dependency -> no local check
+                                                is possible; the truth is elsewhere
+       bare, naming neither                     a record of a moment -> never checked
+
+It is not a heuristic over the text: it reads the conventions the block already requires, so the
+   classification is true by construction. The one case it gets wrong - a bare number *meant* as a
+   pointer - is already a violation of the rule the guard enforces, so the guard is exactly as good
+   as the convention and no better. Measured here on 2026-09-20: 18 citations name the repository,
+   one is bare, and that one is `B67` in the shared block's own commit-message rule - a number used
+   as an example of a number, which is a record and must not be "repaired".
+3. **Both refusals name the file, the line and the target**, so a failure says what to do next.
+
+## What has to be decided with it, because the check is only as good as this
+
+**Does a retired number leave this repository's documents with its file?** The five repairs above
+took the number out and named the thing instead, so in practice the answer has been yes - but it is
+not written down, and `CHANGELOG.md` deliberately does the opposite: it cites 001, 002, 005, 006 and
+010 as the record of what was closed when, and is right to. So the rule is not *every cited number
+must exist*, and an implementation that assumes it will go red on true history.
+
+- Both refusals are **proven by a negative case**, not by watching them pass: put a dangling pointer
+  back, see that one test goes red and nothing else, and that the failure names file, line and
+  target.
+- **The walk asserts it found something - in both directions.** A guard over an empty list of
+  documents passes forever, which is one way this test rots silently. **The inverse is worse and
+  happened on 2026-09-20:** a check run against an empty list of *live issues* reports every
+  citation as dangling, and the output is a tidy table rather than an error. It was run against
+  `NNN-*.md` after the issues had become `SL<nn>-*.md`, so every lookup missed - and it read as
+  twenty-one confirmed defects in another repository, which would have had correct pointers
+  rewritten away. **A check keyed on a filename pattern goes wrong exactly when a rename is what it
+  is being run across**, which is the one circumstance it will ever matter in. So: assert that the
+  live set is non-empty, and treat *everything is dangling* as a symptom rather than a result.
+- **The scan reads the whole text, not line by line, and strips markdown emphasis first.** Both were
+  found by a check going wrong rather than by reasoning:
+  - these documents wrap at 100 columns, so the words that classify a citation land on the previous
+    line often enough that a line-wise scan is green while seeing nothing - measured in another
+    repository, where such a guard passed for two minutes seeing nothing at all;
+  - **emphasis sits between the repository and the number.** This repository writes
+    `Sokar requirement **B14**`, and a pattern matching `Sokar (requirement )?B\d+` does not match
+    it. A first count here reported 11 of 19 citations as bare; the true figure was 18 of 19 named,
+    and every one of the seven differences was bold markers or a line wrap rather than a document
+    that needed repair. **A classifier that reads shape must first see the shape.**
+- **A standing document stays linkable.** What dies is a numbered issue file and an `SL<nn>-*_design.md`;
+  a document that is not a record of an undecided question does not disappear and must not be
+  refused. A guard that is green because nobody has yet done the legitimate thing is not green.
+- `CHANGELOG.md` is still able to say which issues it closed.
+
+A citation of **another repository's** number - `Sokar B14` and the like - cannot be checked from
+here, because the truth is in a repository this build may not read. That is the third row of the
+predicate saying where the gap is rather than a gap in the predicate: no test in the citing
+repository can check it, and none in the cited one either, because neither holds both ends. It is
+the coordinating agent's standing check, ruled on 2026-09-20, and is deliberately out of scope.
+
+**This repository is one where that row has instances**, which `sokar` itself does not: every
+`B`-number there is its own, so a repository-named number cannot arise in its documents. Here all
+eighteen are Sokar's. A guard written from `sokar`'s example would therefore be missing the row this
+repository needs most.
+
+# SL12 — Refuse a description that stopped being true
+
+**Priority:** 7 - one known instance, now repaired; this is about the next one.
+**Opened:** 2026-09-27
+
+`SL11` asks whether what a document **names** still exists. Nothing asks whether what **exists** is
+still described. They are opposite directions and no check written for one sees the other.
+
+On 2026-09-27 this repository's own `AGENTS.md` opened *What this repository is* with:
+
+Two standalone Java programs, in two Maven modules that do not depend on each other:
+
+**The reactor had three.** `transport-spool` landed on 2026-09-18 with its own `.deb`, `.rpm` and
+contract in `doc/transport-spool.md`, and the paragraph that tells an agent what this repository is
+named two thirds of it for nine days. It survived a morning spent hunting stale pointers in the same
+file.
+
+**Neither guard `SL11` specifies would ever have seen it.** There is no dangling link and no citation
+of a number that is gone - the document names things that all exist. It is simply missing one.
+
+**Where a description has a machine-readable counterpart, the two agree.** That is the whole of the
+scope, and the narrowness is the point:
+
+1. **The modules named in `AGENTS.md` are the modules in `pom.xml`** - the same set, neither larger
+   nor smaller. `pom.xml` is the truth and the prose is the copy.
+2. **The count in the sentence matches the list under it.** *"Three standalone Java programs"* above
+   three bullets; a list that grew without its count is the same defect one line smaller.
+3. **Every module has a contract in `doc/`** and every contract in `doc/` names a module that exists.
+
+**Most prose cannot be checked and this issue does not pretend otherwise.** *"It decides nothing and
+never parses a message"* is a claim about behaviour with no counterpart a test can read; asserting it
+would mean restating the program in the test. **What makes items 1 to 3 checkable is that something
+else in the repository already states the same fact in a form a build can read** - and that is the
+test for adding a fourth item, not whether the sentence feels important.
+
+So this issue does **not** cover: a description of behaviour, a rationale, an accepted risk, or
+anything in `doc/` that has no counterpart outside it.
+
+- The check is **proven by a negative case**: remove a module from the prose, or add one to the
+  reactor, and exactly one test goes red naming both sides of the disagreement.
+- **It names what disagrees, not that something does** - *"`AGENTS.md` names filter, transport-local;
+  `pom.xml` has filter, transport-local, transport-spool"* is the failure a person can act on.
+- **The walk asserts it found something in both directions**, for the reason `SL11` records: an empty
+  list of modules or an empty list of prose bullets makes the comparison pass or fail wholesale, and
+  the failing direction is the one somebody acts on.
+- **And non-empty is not enough, because `pom.xml` is a reference set and not the ground truth.**
+  Prose and reactor can agree while a module directory sits outside the build - both sides wrong
+  together, and the comparison passes. **So the check has three sources, not two**: the prose, the
+  reactor, and the directories on disk that carry a `pom.xml`. Measured 2026-09-27: three, three and
+  three, so there is no instance today - which is exactly when the criterion is cheap to write.
+  The shape is Agent Smith's, from a gate whose five-component reference set could not change.
+- It runs in this repository's own build, against this repository's own `pom.xml`.
+
+`SL11` is the other direction and is the one to build first if only one is built: a pointer to
+something deleted is a reader sent nowhere, where a description that lags is a reader told less than
+there is. **Both are in the class of a sentence made false by a change elsewhere, which is the thing
+this repository keeps paying for and no build reads.**
+
+# SL13 — Refuse a requirement number in code
+
+**Priority:** 7 - the code is clean today; this keeps it so.
+**Opened:** 2026-09-27
+
+`AGENTS.md` now says a comment never carries a requirement or an issue number. Nothing enforces it.
+
+On 2026-09-27 the operator asked why `Mailbox.java` said *"A task's mail directory as Sokar B14 lays
+it out"*. **Seven citations of `Sokar B14` were in the Java**, in the filter and both transports, and
+two of `Sokar QF19` — a channel position — were in published RPM specifications.
+
+**How they survived a sweep the same morning:** the sweep asked whether a rule *forbade* them, found
+none here, and read the absence of a prohibition as permission. **The rule that did apply was the
+positive one** — a comment gives the reason a reader would otherwise reconstruct — and a number is an
+authority, not a reason.
+
+**What makes the case unarguable:** at six of the seven sites the constraint was already written
+beside the number. *"the exit codes fixed by Sokar B14: 0 handed over, 75 temporary"* states the
+codes. The number added a pointer whose index is in a repository this build cannot read.
+
+1. **No `[A-Z]{1,2}\d{2}` and no `Q[A-Z]\d+` in anything that ships or executes** — `.java`, `.xml`,
+   `.sh`, `.properties`, `.yml`, `.json` and the extensionless packaging files.
+2. **Markdown is out of scope.** In `issues/` and `doc/` a requirement named by number and index is
+   the prescribed form, and `SL11` covers the stale ones.
+3. **The refusal names the file, the line and the token**, so it says what to do rather than that
+   something is wrong.
+
+## What it will cost, and it is not avoidable by a cleverer pattern
+
+`EncodingSignatureDetectorTest` contains `"Read B49-What-The-Build-Trusts-To-Run-Beside-Its-Secrets.md
+first."` — **a fixture proving the encoding detector does not refuse a file name.** It is data, not a
+citation, and this guard will refuse it.
+
+**The answer is to move the sample out of the pattern, not to add an exemption**: a fixture proving a
+detector accepts prose does not need a real requirement name in it. An exemption list is the second
+copy that goes stale, which this project has refused four times.
+
+- **Proven by a negative case**: put one citation back, watch exactly one test go red naming file,
+  line and token.
+- **The walk asserts it found files to scan**, in both directions, for the reason `SL12` records.
+- It runs in this repository's own build.
+
+`SL11` refuses a pointer to something gone; `SL12` refuses a description the build can contradict;
+this refuses a pointer from code to anything at all. **Three checks that could land as one test class
+and are three issues because each could land alone.**
+
+# SL14 — Check the code against the house skills
+
+**Priority:** 1 - the operator's instruction of 2026-09-27, next after the task in hand.
+**Opened:** 2026-09-27
+
+Everything here was written and tested by the author of its tests. **Tests prove what their author
+thought of**; the house skills are a second author's list. On the same day, Sokar read its newest
+tool against two of them after 104 green tests and found two defects none of those tests had - a
+token sent wherever a configured property pointed, and an exception that exited with the code for
+*disagree*.
+
+The seven `AGENTS.md` names under *The skills this repository expects you to have*, fetched and
+checked as it says there.
+
+- **The Java of all three modules**, `src/main` and `src/test`, and each `pom.xml` - 71 files, about
+  7,400 lines on 2026-09-27.
+- **The four shell files that stay** - `install-local.sh` and `buildtools/` - against
+  `security-audit` only. Three of them run with `sudo` and create users; they are not being replaced,
+  so a defect in them lasts.
+
+**`security-audit` weighs heaviest in `filter/`**, because the filter is where the rules this
+repository lives by are enforced: a refusal must not exfiltrate what it prevents, and it fails
+closed. A finding that touches either is at the top of whatever this issue produces.
+
+- **Every finding is either fixed, with a test that fails without the fix, or opened as its own
+  issue** with the skill, the file and the line. Nothing is fixed without a test that was run
+  against the broken version first.
+- **A skill that a measurement contradicts is written down beside the measurement** - in
+  `doc/decisions.md` if it settles something, here otherwise. A skill is knowledge, not authority.
+- **A skill that found nothing says so**, by name. A review that reports only its findings cannot be
+  told apart from one that was not done.
+- The suite is green, with the counts of tests run and skipped stated.
+
+Nothing here is blocked by Sokar. The same review is open in every Sokar repository at the
+operator's instruction; each covers its own code.

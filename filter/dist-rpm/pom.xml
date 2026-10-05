@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.fuin.sokar</groupId>
+        <artifactId>sokar-message-sluice-filter-parent</artifactId>
+        <version>0.4.0</version>
+    </parent>
+
+    <artifactId>sokar-message-sluice-filter-rpm</artifactId>
+    <packaging>pom</packaging>
+    <name>sokar-message-sluice-filter (.rpm)</name>
+    <description>The .rpm package of sokar-message-sluice-filter</description>
+
+    <!-- The native binary is not a Maven artifact, so it is found by path. The dependency only puts
+         this module after the one that builds it. -->
+
+    <dependencies>
+        <dependency>
+            <groupId>org.fuin.sokar</groupId>
+            <artifactId>sokar-message-sluice-filter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- On verify, as the .deb. Release 1 and the same version for a snapshot, or a snapshot gets
+                 a timestamp release and the rpm and the deb disagree about which version they are. -->
+
+            <plugin>
+                <groupId>de.dentrassi.maven</groupId>
+                <artifactId>rpm</artifactId>
+                <version>${rpm-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>rpm</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>rpm</goal>
+                        </goals>
+                        <configuration>
+                            <packageName>sokar-message-sluice-filter</packageName>
+                            <outputFileName>sokar-message-sluice-filter-${sluice.package.version}-1.x86_64.rpm</outputFileName>
+                            <version>${sluice.package.version}</version>
+                            <snapshotVersion>${sluice.package.version}</snapshotVersion>
+                            <release>1</release>
+                            <forceRelease>true</forceRelease>
+                            <architecture>x86_64</architecture>
+                            <group>Applications/System</group>
+                            <license>GPL-3.0-or-later</license>
+                            <summary>Refuses an outgoing agent message that carries data</summary>
+                            <description>The filter Sokar runs over every message a task sends: only plain English prose passes.</description>
+                            <evalHostname>false</evalHostname>
+                            <skipSigning>true</skipSigning>
+                            <attach>false</attach>
+                            <!-- The names rpmbuild itself would generate from the binary. -->
+                            <requires>
+                                <require>sokar</require>
+                                <require>libc.so.6(GLIBC_${sluice.glibc.floor})(64bit)</require>
+                                <require>libz.so.1(ZLIB_${sluice.zlib.floor})(64bit)</require>
+                            </requires>
+                            <entries>
+                                <entry>
+                                    <name>/usr/libexec/sokar/sokar-message-sluice-filter</name>
+                                    <file>${project.basedir}/../app/target/sokar-message-sluice-filter</file>
+                                    <user>root</user>
+                                    <group>root</group>
+                                    <mode>0755</mode>
+                                </entry>
+                                <entry>
+                                    <name>/usr/share/doc/sokar-message-sluice-filter/bom.json</name>
+                                    <file>${project.basedir}/../app/target/bom.json</file>
+                                    <user>root</user>
+                                    <group>root</group>
+                                    <mode>0644</mode>
+                                    <documentation>true</documentation>
+                                </entry>
+                                <entry>
+                                    <name>/usr/share/licenses/sokar-message-sluice-filter/LICENSE</name>
+                                    <file>${project.basedir}/../../LICENSE</file>
+                                    <user>root</user>
+                                    <group>root</group>
+                                    <mode>0644</mode>
+                                    <license>true</license>
+                                </entry>
+                            </entries>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>

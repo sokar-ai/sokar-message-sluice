@@ -1,0 +1,11 @@
+Package: sokar-message-sluice-filter
+Version: [[sluice.package.version]]
+Section: admin
+Priority: optional
+Architecture: amd64
+Depends: sokar, libc6 (>= [[sluice.glibc.floor]]), zlib1g (>= 1:[[sluice.zlib.floor]])
+Maintainer: Michael Schnell <michael@schnell-it.ch>
+Homepage: https://github.com/sokar-ai/sokar-message-sluice
+Description: Refuses an outgoing agent message that carries data
+ The filter Sokar runs over every message a task sends: only plain English prose passes.
+ Encoded payloads, credentials and personal data are refused, and the task is told why.

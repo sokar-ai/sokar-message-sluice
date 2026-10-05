@@ -1,0 +1,1 @@
+{"messageId":"fx-accept-2","role":"ROLE_AGENT","contextId":"ctx-fixtures","parts":[{"text":"The rules are described at https://docs.example.com/guides/configuration/advanced/networking/proxies.html and nothing there changed."}],"metadata":{"to":"reviewer"}}

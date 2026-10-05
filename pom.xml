@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+         child.project.url.inherit.append.path="false">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.fuin</groupId>
+        <artifactId>pom</artifactId>
+        <version>2.0.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>org.fuin.sokar</groupId>
+    <artifactId>sokar-message-sluice</artifactId>
+    <version>0.4.0</version>
+    <packaging>pom</packaging>
+    <name>Sokar Message Sluice</name>
+    <description>Filters the messages an agent sends out</description>
+
+    <url>https://github.com/sokar-ai/sokar-message-sluice/</url>
+
+    <scm child.scm.url.inherit.append.path="false"
+         child.scm.connection.inherit.append.path="false"
+         child.scm.developerConnection.inherit.append.path="false">
+        <url>https://github.com/sokar-ai/sokar-message-sluice/</url>
+        <connection>scm:git:git://github.com/sokar-ai/sokar-message-sluice.git</connection>
+        <developerConnection>scm:git:git@github.com:sokar-ai/sokar-message-sluice.git</developerConnection>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/sokar-ai/sokar-message-sluice/issues</url>
+    </issueManagement>
+
+    <!-- One program, the filter, with its code and its packages below it. It decides what may pass
+         and knows no transport; the transports that carry what passed live in repositories of their
+         own. -->
+
+    <modules>
+        <module>filter</module>
+    </modules>
+
+    <properties>
+        <java.release.version>25</java.release.version>
+        <fuin-bom.version>1.0.2</fuin-bom.version>
+        <native-maven-plugin.version>1.1.11</native-maven-plugin.version>
+        <jdeb.version>1.14</jdeb.version>
+        <rpm-maven-plugin.version>1.13.0</rpm-maven-plugin.version>
+        <build-helper.version>3.6.1</build-helper.version>
+        <cyclonedx.version>2.9.3</cyclonedx.version>
+        <error-prone.version>2.50.0</error-prone.version>
+        <nullaway.version>0.14.2</nullaway.version>
+
+        <failsafe.version>3.5.5</failsafe.version>
+        <sokar.version>0.4.0</sokar.version>
+
+        <!-- The highest symbol versions the native binaries use, measured with readelf.
+             The packages declare them, and LinkageIT holds them to the binaries. -->
+        <sluice.glibc.floor>2.34</sluice.glibc.floor>
+        <sluice.zlib.floor>1.2.2</sluice.zlib.floor>
+
+        <!-- The run number CI passes; a local build is marked as one. -->
+        <sluice.snapshot.run>0+local.${maven.build.timestamp}</sluice.snapshot.run>
+        <maven.build.timestamp.format>yyyyMMdd'T'HHmmss</maven.build.timestamp.format>
+
+        <!-- Binaries somebody runs, not libraries anybody resolves. -->
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
+    <dependencyManagement>
+
+        <dependencies>
+
+            <!-- Where jackson, jspecify, junit and assertj get their versions, as in the sokar
+                 repository. Also pins Byte Buddy to a release that accepts JDK 25 class files. -->
+
+            <dependency>
+                <groupId>org.fuin</groupId>
+                <artifactId>bom</artifactId>
+                <version>${fuin-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+        </dependencies>
+
+    </dependencyManagement>
+
+    <build>
+
+        <plugins>
+
+            <!-- @NullMarked is a promise until something checks it: NullAway makes a broken nullness
+                 contract a compile error. Only the main compile - tests pass null on purpose. Error
+                 Prone runs only NullAway, so it adds nothing else to fix. Declaring processor paths
+                 turns off discovery from the class path; nothing here relies on it. Needs
+                 .mvn/jvm.config, which opens javac's internals to Error Prone on JDK 25. -->
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-XDcompilePolicy=simple</arg>
+                                <arg>--should-stop=ifError=FLOW</arg>
+                                <arg>-Xplugin:ErrorProne -XepDisableAllChecks -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true</arg>
+                            </compilerArgs>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>com.google.errorprone</groupId>
+                                    <artifactId>error_prone_core</artifactId>
+                                    <version>${error-prone.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>com.uber.nullaway</groupId>
+                                    <artifactId>nullaway</artifactId>
+                                    <version>${nullaway.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+
+        <pluginManagement>
+            <plugins>
+
+                <!-- Declared by the two code modules: a jar that names its main class and finds its
+                     dependencies in lib/ beside it, from which native-image builds the executable. -->
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <mainClass>${main.class}</mainClass>
+                                <addClasspath>true</addClasspath>
+                                <classpathPrefix>lib/</classpathPrefix>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>copy-runtime-dependencies</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                                <includeScope>runtime</includeScope>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+            </plugins>
+        </pluginManagement>
+
+    </build>
+
+    <profiles>
+
+        <!-- The filter ships as a native executable, like every other Sokar tool. Built with
+             'mvn -Pnative package' on a GraalVM. Configured here, switched on by the module that is
+             the program; this aggregator is not one. -->
+
+        <profile>
+            <id>native</id>
+            <properties>
+                <!-- What the dist modules require, so they never pack a binary from an earlier build. -->
+                <sluice.native>true</sluice.native>
+            </properties>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.graalvm.buildtools</groupId>
+                            <artifactId>native-maven-plugin</artifactId>
+                            <version>${native-maven-plugin.version}</version>
+                            <extensions>true</extensions>
+                            <executions>
+                                <execution>
+                                    <id>build-native</id>
+                                    <phase>package</phase>
+                                    <goals>
+                                        <goal>compile-no-fork</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                            <!-- As in Sokar's own build, except for the no-fallback build argument, which
+                                 GraalVM 25 answers with "no effect, no replacement available". -->
+                            <configuration>
+                                <imageName>${native.image.name}</imageName>
+                                <mainClass>${main.class}</mainClass>
+                                <fallback>false</fallback>
+                                <buildArgs>
+                                    <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                                    <!-- The packages say amd64, which promises the x86-64 baseline and
+                                         no more; GraalVM's default, x86-64-v3, fails at first start
+                                         without AVX2. See doc/decisions.md. -->
+                                    <buildArg>-march=x86-64</buildArg>
+                                </buildArgs>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <!-- The packages: a dist-deb and a dist-rpm module beside the program's code, one package per
+             format. Needs 'native' in the same run: -Pnative,dist. -->
+
+        <!-- Sokar's machine tool on the class path, for installing the packages on a rented machine
+             before a push: dependency:build-classpath with -Pci-tools, then its Main. As in the agent
+             repositories. -->
+
+        <profile>
+            <id>ci-tools</id>
+            <dependencyManagement>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.fuin.sokar</groupId>
+                        <artifactId>sokar-bom</artifactId>
+                        <version>${sokar.version}</version>
+                        <type>pom</type>
+                        <scope>import</scope>
+                    </dependency>
+                </dependencies>
+            </dependencyManagement>
+            <dependencies>
+                <dependency>
+                    <groupId>org.fuin.sokar</groupId>
+                    <artifactId>sokar-machines</artifactId>
+                </dependency>
+                <!-- check-actions: what the build runs is pinned, and moved only by review. -->
+                <dependency>
+                    <groupId>org.fuin.sokar</groupId>
+                    <artifactId>sokar-release</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>dist</id>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <groupId>org.cyclonedx</groupId>
+                            <artifactId>cyclonedx-maven-plugin</artifactId>
+                            <version>${cyclonedx.version}</version>
+                            <executions>
+                                <execution>
+                                    <id>bill-of-materials</id>
+                                    <phase>package</phase>
+                                    <goals>
+                                        <goal>makeBom</goal>
+                                    </goals>
+                                    <configuration>
+                                        <outputFormat>json</outputFormat>
+                                        <outputName>bom</outputName>
+                                        <includeTestScope>false</includeTestScope>
+                                        <!-- It skips a module that is not deployed, and none here is:
+                                             these are programs, published as packages. -->
+                                        <skipNotDeployed>false</skipNotDeployed>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-failsafe-plugin</artifactId>
+                            <version>${failsafe.version}</version>
+                            <executions>
+                                <execution>
+                                    <id>linkage</id>
+                                    <goals>
+                                        <goal>integration-test</goal>
+                                        <goal>verify</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                            <configuration>
+                                <includes>
+                                    <include>**/*LinkageIT.java</include>
+                                </includes>
+                                <systemPropertyVariables>
+                                    <sluice.binary>${project.build.directory}/${native.image.name}</sluice.binary>
+                                    <sluice.glibc.floor>${sluice.glibc.floor}</sluice.glibc.floor>
+                                    <sluice.zlib.floor>${sluice.zlib.floor}</sluice.zlib.floor>
+                                    <sluice.deb.control>${project.basedir}/../dist-deb/src/deb/control</sluice.deb.control>
+                                    <sluice.rpm.pom>${project.basedir}/../dist-rpm/pom.xml</sluice.rpm.pom>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.codehaus.mojo</groupId>
+                            <artifactId>build-helper-maven-plugin</artifactId>
+                            <version>${build-helper.version}</version>
+                            <executions>
+                                <!-- 1.0.0-SNAPSHOT becomes 1.0.0~snapshot.<run>: '~' sorts below the
+                                     release in dpkg and rpm alike, '-' above it. -->
+                                <execution>
+                                    <id>package-version</id>
+                                    <phase>validate</phase>
+                                    <goals>
+                                        <goal>regex-property</goal>
+                                    </goals>
+                                    <configuration>
+                                        <name>sluice.package.version</name>
+                                        <value>${project.version}</value>
+                                        <regex>-SNAPSHOT$</regex>
+                                        <replacement>~snapshot.${sluice.snapshot.run}</replacement>
+                                        <failIfNoMatch>false</failIfNoMatch>
+                                    </configuration>
+                                </execution>
+                                <!-- LinkageIT lives outside the program and is compiled into its tests,
+                                     a check of the build rather than part of what ships. -->
+                                <execution>
+                                    <id>linkage-test</id>
+                                    <phase>generate-test-sources</phase>
+                                    <goals>
+                                        <goal>add-test-source</goal>
+                                    </goals>
+                                    <configuration>
+                                        <sources>
+                                            <source>${project.basedir}/../../dist-common/src/test/java</source>
+                                        </sources>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-enforcer-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>native-in-the-same-run</id>
+                                    <phase>validate</phase>
+                                    <goals>
+                                        <goal>enforce</goal>
+                                    </goals>
+                                    <configuration>
+                                        <rules>
+                                            <requireProperty>
+                                                <property>sluice.native</property>
+                                                <message>The packages hold the native binaries built in
+                                                    the same run: build with -Pnative,dist.</message>
+                                            </requireProperty>
+                                        </rules>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+    </profiles>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+</project>
