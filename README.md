@@ -1,5 +1,10 @@
 # sokar-message-sluice
 
+<img src="doc/images/early-bird.svg" width="350" alt="Early bird - work in progress">
+
+> **Early bird - work in progress.** Sokar is not stable yet: until release 1.0.0, its code, commands
+> and file formats can change without notice.
+
 The filter that every message an AI agent sends under Sokar passes through. It lets plain English
 prose through and refuses a message that carries data instead: an encoded payload, a file in a
 message part, a link or data part where text belongs.
