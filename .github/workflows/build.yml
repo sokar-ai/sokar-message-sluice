@@ -1,16 +1,16 @@
 # Unit tests, the native executable, its packages - and on main, the packages published.
 name: Build
 
-# A push that only touches documentation builds nothing - except AGENTS.md, whose shared rules are checked.
+# A push that only touches documents builds nothing; the Shared rules workflow checks them.
 on:
   push:
     branches: ['**']
     # A release: v<version>, built and published to the 'releases' channel. Paths are not filtered for a tag.
     tags: ['v*']
-    paths: ['**', '!**/*.md', 'AGENTS.md']
+    paths: ['**', '!**/*.md', '!doc/**', '!issues/**', '!mkdocs.yml']
   pull_request:
     branches: ['**']
-    paths: ['**', '!**/*.md', 'AGENTS.md']
+    paths: ['**', '!**/*.md', '!doc/**', '!issues/**', '!mkdocs.yml']
   workflow_dispatch:
 
 concurrency:
@@ -54,13 +54,6 @@ jobs:
         run: |
           "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
               org.fuin.sokar.release.Main check-actions
-
-      # The shared rules are copied byte for byte into every repository; an edited copy no longer
-      # matches the hash its markers carry.
-      - name: The shared rules are unchanged copies
-        run: |
-          "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
-              org.fuin.sokar.release.Main check-shared AGENTS.md
 
       # -s settings.xml declares the snapshot repository, and keeps a developer's own
       # ~/.m2/settings.xml out of what CI resolves. The filter ships as a native executable in

@@ -5,8 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -16,9 +17,11 @@ import org.junit.jupiter.api.Test;
 /**
  * A change to documents runs only the tests tagged {@code documents} ({@code -Pdocuments}), so a test that reads a
  * document without the tag would be skipped exactly when it matters. A test reads a document when its source names
- * one as a path: a string literal that is a Markdown file name, the Markdown suffix, the documentation directory or
- * the site's navigation. A page quoted inside a longer text is test data, not a read.
+ * one as a path: a string literal that is a Markdown file name, the Markdown suffix, the documentation directory, the
+ * issues or the site's navigation. A page quoted inside a longer text is test data, not a read. Tagged itself, so the
+ * profile runs the guard even where no test reads a document.
  */
+@Tag("documents")
 class DocumentTestsTaggedTest {
 
     private static final Path SOURCES = Path.of("src", "test", "java");
@@ -28,26 +31,37 @@ class DocumentTestsTaggedTest {
 
     @Test
     void everyTestThatReadsADocumentIsTaggedDocuments() throws IOException {
-        final Set<String> readers = documentReaders();
+        final Map<String, String> sources = testSources();
 
-        // A wrong root or pattern finds nothing and would pass; a quoted page in a sentence must not count.
-        assertThat(readers).as("tests that read a document").contains(IssueCitationTest.class.getName())
-                .doesNotContain("org.fuin.sokar.msgsluice.filter.detect.MaskedTest");
-        assertThat(readers.stream().filter(c -> !taggedDocuments(c)).toList())
+        // A wrong root reads nothing and would pass: this test and one beside it must be among the sources read.
+        assertThat(sources).as("test sources read").containsKeys(DocumentTestsTaggedTest.class.getName(),
+                NullMarkedPackagesTest.class.getName());
+        assertThat(sources.entrySet().stream().filter(e -> DOCUMENT_PATH.matcher(e.getValue()).find())
+                .map(Map.Entry::getKey).filter(c -> !taggedDocuments(c)).toList())
                 .as("tests that read a document without @Tag(\"documents\")").isEmpty();
     }
 
-    private static Set<String> documentReaders() throws IOException {
+    @Test
+    void aDocumentIsANamedPathAndNotAQuotedPage() {
+        for (final String read : List.of("Path.of(\"doc\", \"filter.md\")", "f.endsWith(\".md\")",
+                "Path.of(\"..\", \"..\", \"README.md\")", "Path.of(\"issues\")", "root.resolve(\"mkdocs.yml\")")) {
+            assertThat(DOCUMENT_PATH.matcher(read).find()).as(read).isTrue();
+        }
+        for (final String data : List.of("\"The design is at https://example.org/doc/filter.md\"",
+                "\"See fixtures/README.md and the rest\"", "\"documents\"", "\"docs\"")) {
+            assertThat(DOCUMENT_PATH.matcher(data).find()).as(data).isFalse();
+        }
+    }
+
+    private static Map<String, String> testSources() throws IOException {
         assertThat(SOURCES).isDirectory();
-        final Set<String> readers = new TreeSet<>();
+        final Map<String, String> sources = new TreeMap<>();
         try (Stream<Path> files = Files.walk(SOURCES)) {
             for (final Path file : files.filter(f -> f.getFileName().toString().endsWith(".java")).toList()) {
-                if (DOCUMENT_PATH.matcher(Files.readString(file)).find()) {
-                    readers.add(className(file));
-                }
+                sources.put(className(file), Files.readString(file));
             }
         }
-        return readers;
+        return sources;
     }
 
     private static String className(final Path file) {

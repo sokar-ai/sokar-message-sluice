@@ -1,0 +1,64 @@
+# The rules and the documents - the Build workflow skips a change to documents alone, so what such a
+# change needs runs here, on a GitHub runner and without the native build.
+name: Shared rules
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  check:
+    name: Rules and documents
+    # Pinned, not 'ubuntu-latest'.
+    runs-on: ubuntu-24.04
+    # A guess, not yet measured on a runner: a slow runner must end, not run for GitHub's six hours.
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Cache the Maven repository
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-
+
+      # As in the Build workflow: the GraalVM that compiles the tests is the one sokar-machines pins,
+      # its archive checked against the pinned digest; the runner's own Java 25 only runs that step
+      # and the checks.
+      - name: The pinned GraalVM
+        run: |
+          export JAVA_HOME="$JAVA_HOME_25_X64"
+          ./mvnw -B -q -U -N -Pci-tools -s settings.xml dependency:build-classpath \
+              -Dmdep.outputFile="$RUNNER_TEMP/tools.classpath"
+          "$JAVA_HOME/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
+              org.fuin.sokar.machines.Main jdk --github
+
+      # The shared rules are copied byte for byte into every repository; an edited copy no longer
+      # matches the hash its markers carry.
+      - name: The shared rules are unchanged copies
+        run: |
+          "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
+              org.fuin.sokar.release.Main check-shared AGENTS.md
+
+      # An issue's file is deleted when it is finished, so nothing links to it and nothing outside
+      # issues/ cites its number; every page is in the site's navigation once, and no link leaves doc/.
+      - name: The documents cite no issue and the site holds every page
+        run: |
+          "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
+              org.fuin.sokar.release.Main check-citations .
+          "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
+              org.fuin.sokar.release.Main check-doc-site doc mkdocs.yml
+
+      # Every test that reads a document carries the tag documents, and the guard among them fails
+      # when one does not.
+      - name: The tests that read documents
+        run: ./mvnw -B -s settings.xml -Pdocuments test

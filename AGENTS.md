@@ -240,7 +240,11 @@ first, never in one copy.
 - **The workflow's steps that run no Maven can be run here verbatim**, with `RUNNER_TEMP` and
   `GITHUB_WORKSPACE` set, against the packages the native build wrote.
 - **The tests tagged `documents` run alone with `./mvnw -B -s settings.xml -Pdocuments test`**, and
-  `DocumentTestsTaggedTest` fails when a test reads a document without the tag.
+  `DocumentTestsTaggedTest` fails when a test reads a document without the tag; none reads one today.
+- **The `shared-rules` workflow checks the documents** on every push and pull request, while the
+  build skips a change to documents alone: `check-shared`, `check-citations`, `check-doc-site` and
+  the tests tagged `documents`. `citations-exempt.txt` names the measured
+  corpus, whose lines hold the shape of issue numbers on purpose.
 
 ## The skills this repository uses
 
@@ -267,7 +271,7 @@ One standalone Java program, the filter, in one Maven module, `filter/`. It deci
 contain and knows no transport; the transports live in repositories of their own, the Matrix transport
 in `sokar-message-matrix`.
 
-Nothing here depends on a Sokar artifact: Sokar drives the filter by placing files where it reads them
-(Sokar requirement B14), so a change to that directory contract is a change here and in Sokar. If
+Nothing here depends on a Sokar artifact: Sokar drives the filter by placing files where it reads them,
+so a change to that directory contract is a change here and in Sokar. If
 something has to be shared with a transport, it is the directory contract or the message format, both
 written down rather than compiled against.

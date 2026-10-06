@@ -1,0 +1,3 @@
+# Files that hold the shape of issue numbers on purpose; check-citations does not read them for numbers.
+# Measured prose agents wrote to each other, which the filter must pass as prose.
+filter/app/src/test/resources/english-corpus.txt

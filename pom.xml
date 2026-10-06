@@ -55,7 +55,8 @@
         <nullaway.version>0.14.2</nullaway.version>
 
         <failsafe.version>3.5.5</failsafe.version>
-        <sokar.version>0.4.0</sokar.version>
+        <!-- The build tools, named directly: sokar-bom would pin them to Sokar's own release. -->
+        <sokar.buildtools.version>0.4.1</sokar.buildtools.version>
 
         <!-- The highest symbol versions the native binaries use, measured with readelf.
              The packages declare them, and LinkageIT holds them to the binaries. -->
@@ -232,26 +233,17 @@
 
         <profile>
             <id>ci-tools</id>
-            <dependencyManagement>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.fuin.sokar</groupId>
-                        <artifactId>sokar-bom</artifactId>
-                        <version>${sokar.version}</version>
-                        <type>pom</type>
-                        <scope>import</scope>
-                    </dependency>
-                </dependencies>
-            </dependencyManagement>
             <dependencies>
                 <dependency>
                     <groupId>org.fuin.sokar</groupId>
                     <artifactId>sokar-machines</artifactId>
+                    <version>${sokar.buildtools.version}</version>
                 </dependency>
-                <!-- check-actions: what the build runs is pinned, and moved only by review. -->
+                <!-- check-actions, check-shared, check-citations and check-doc-site. -->
                 <dependency>
                     <groupId>org.fuin.sokar</groupId>
                     <artifactId>sokar-release</artifactId>
+                    <version>${sokar.buildtools.version}</version>
                 </dependency>
             </dependencies>
         </profile>
