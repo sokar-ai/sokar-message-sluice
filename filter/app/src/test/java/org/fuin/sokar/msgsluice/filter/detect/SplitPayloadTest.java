@@ -66,11 +66,13 @@ class SplitPayloadTest {
     @Test
     void proseWithNumbersFlagsAndIdentifiersIsNotJoined() {
         for (final String text : List.of(
-                "Run 283 had 2 of 214 red in B76 and B85 on the VM, both fixed in run 284 at 04:17Z today.",
+                "Run 283 had 2 of 214 red in B76 and B85 on the VM, " // not-a-citation: prose the filter reads
+                        + "both fixed in run 284 at 04:17Z today.",
                 "deploy --vm sluice --key claude_key --repo handover/sokar/10f032b1 --skip-build --account",
                 "TaskRunner VaultProxy NftRuleset EnvelopeCheck MessageArchive Calibration FileOps MessageSluice",
                 "The legs took 15 30 and 19 21 minutes; 20 20 16 4 were served by the cache in 4 accounts.",
-                "see MX12 MX13 MX14 B92 B93 B94 B96 F76 F79 F80 SL07 SL08 PJ18 PJ19 in the index")) {
+                "see MX12 MX13 MX14 B92 B93 B94 B96 " // not-a-citation: prose the filter reads
+                        + "F76 F79 F80 SL07 SL08 PJ18 PJ19 in the index")) { // not-a-citation
             assertThat(EncodedPayloadRatesTest.judge(text).accepted()).as(text).isTrue();
         }
     }
