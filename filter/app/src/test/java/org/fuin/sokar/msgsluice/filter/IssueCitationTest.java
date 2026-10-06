@@ -16,6 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test;
  * once it is finished, and the number then points nowhere. The pages in {@code doc/} are published, so they are
  * read too; the other Markdown - issues, rules, the changelog - is where numbers belong.
  */
+@Tag("documents")
 class IssueCitationTest {
 
     private static final Path ROOT = Path.of("..", "..");

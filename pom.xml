@@ -256,6 +256,16 @@
             </dependencies>
         </profile>
 
+        <!-- Only the tests that read the repository's documents, all a change to documents needs:
+             'mvn -Pdocuments test'. DocumentTestsTaggedTest holds every such test to the tag. -->
+
+        <profile>
+            <id>documents</id>
+            <properties>
+                <groups>documents</groups>
+            </properties>
+        </profile>
+
         <profile>
             <id>dist</id>
             <build>
