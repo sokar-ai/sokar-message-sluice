@@ -2,11 +2,11 @@
 
 ## Shared across the Sokar repositories
 
-> **BEGIN Shared Area** · sha256 `ab50c3787a547eab` · changed 2026-10-06T09:00Z
+> **BEGIN Shared Area** · sha256 `07ac9925c20b6fd9` · changed 2026-10-08T06:49Z
 
-Identical in every repository `project.yml` names. The markers carry the SHA-256 of the lines between
-them (the first 16 hex digits) and the UTC time that text last changed; change it in the channel
-first, never in one copy.
+Identical in every repository `project.yml` names but `sokar-parent`, which holds only the parent pom
+and no `AGENTS.md`. The markers carry the SHA-256 of the lines between them (the first 16 hex digits)
+and the UTC time that text last changed; change it in the channel first, never in one copy.
 
 ### Agents and the rules they follow
 
@@ -51,6 +51,8 @@ first, never in one copy.
   repaired by a new commit on the remote's tip, never by a force push.
 - **A commit message is one brief line saying in words what changed**, never by a requirement number;
   the reasoning goes into an issue or a decision.
+- **No commit message, changelog entry, issue or document says who asked for a change or who made it**
+  - no "as the operator chose", no agent's name; it says what changed and why.
 - **A change to what ships or builds gets its changelog entry in the same commit**, under
   `[Unreleased]` and the heading of its kind. A generated changelog is changed only through its
   sources, never by hand.
@@ -205,24 +207,45 @@ first, never in one copy.
 - **A comment says why, never what, in one line where it can.** Reasoning that does not fit goes into
   documentation or a decision, and a small named method is preferred over a comment explaining a
   block.
-- **Dot files are not committed.** `.gitignore` ignores `.*` and excepts only what a build needs - in
-  a Java repository `.github`, `.mvn`, `.gitignore` and `.gitkeep` - and what is true of one machine
-  goes into `.AGENTS.md`.
-- **A Java repository builds, checks and tests with Java and Maven only.** A file that cannot be
-  Java - `mvnw`, or a script that runs where there is no Java yet - is named in its repository's own
-  part with the reason, and no repository keeps a copy of a helper another one has.
+- **Dot files are not committed.** `.gitignore` ignores `.*` and excepts only what a build needs -
+  `.github`, `.gitignore` and `.gitkeep`, in a Maven repository also `.mvn` - and what is true of one
+  machine goes into `.AGENTS.md`.
+- **Maven is the build system: a Java repository builds, checks and tests with Java and Maven only.**
+  Another build tool only where the platform a repository builds for supports no other - an IntelliJ
+  plugin, since JetBrains supports only Gradle - named with the reason in its repository's own part. A
+  file that cannot be Java - `mvnw`, or a script that runs where there is no Java yet - is named in its
+  repository's own part with the reason, and no repository keeps a copy of a helper another one has.
+- **Maven modules that belong together - the layers of one program, its packages - are submodules of
+  one module of packaging `pom` named for what they share**, so the root lists parts, not pieces.
+  Grouping changes only `parent` and `relativePath`, never a `groupId` or `artifactId`.
+- **Every directory with a `pom.xml` has a `README.md`**: two or three sentences on what the module is
+  and is not, a link to each of its submodules, and only the few technical facts that matter most, such
+  as what it must never depend on; details are linked in `doc/`, never repeated. `sokar-release
+  check-readmes` holds it.
+- **Only what another repository or an outsider builds against is published to Maven Central, each such
+  module opting in; the root and every grouping module are never published.** Every published pom is
+  flattened, so it names no parent and a consumer needs nothing but the module itself; `sokar-release
+  check-releases` refuses a release whose published pom still names one. A BOM is imported, never a
+  parent.
+- **Every Sokar Maven repository takes `org.fuin.sokar:sokar-parent` as its parent** and declares only what
+  is its own; one that publishes declares `flatten-maven-plugin` by name in its root, and the parent's
+  management flattens every module. `sokar-parent` names no parent and uses nothing of another Sokar
+  repository.
 - **Every Java package with main code is `@NullMarked` and checked by NullAway as an error when it
   compiles**, with a test that fails on an unmarked package.
 - **`Files.move` with `ATOMIC_MOVE` replaces a file that already has the target name**; where the
   first of two writers must win, publish with `Files.createLink` (`link(2)`), which fails on an
   existing name.
 - **Java code carries brief Javadoc on every public type and method; a test method's name reads as a
-  sentence (never `testXxx`) and an assertion states its reason (`.as(...)`).** Every Maven call in
-  CI passes `-s settings.xml`.
+  sentence (never `testXxx`) and an assertion states its reason (`.as(...)`).** Every build call in
+  CI names its repositories in the repository itself (Maven: `-s settings.xml`).
 - **Everything a build runs is pinned and moved only by review**: actions by commit with the version
-  beside it, the JDK (from `sokar-machines jdk --github`), Maven and images by version and digest,
-  updated by Dependabot weekly, in one group, after three days. `sokar-release check-actions`
-  enforces it.
+  beside it, the JDK (from `sokar-machines jdk --github`), the build tool's wrapper (Maven, Gradle) and
+  images by version and digest, updated by Dependabot weekly, in one group, after three days.
+  `sokar-release check-actions` enforces it.
+- **While it is developed, a repository may build against another Sokar repository's snapshot from
+  Sonatype**, and its build may fail for a while when that snapshot moves; a release depends only on
+  releases, which the release build checks.
 - **Packages are built online**: offline, the CycloneDX bill of materials skips itself with only a
   warning, and the package ships without it.
 - **A publish is believed only once the published index shows the exact version**, probed with
@@ -231,7 +254,7 @@ first, never in one copy.
 - **Every native executable is built with `-march=x86-64`**, so it starts on any x86-64 CPU, and the
   build checks each executable for exactly that instruction set.
 
-> **END Shared Area** · sha256 `ab50c3787a547eab`
+> **END Shared Area** · sha256 `07ac9925c20b6fd9`
 
 ## Work in this repository
 
@@ -245,8 +268,8 @@ first, never in one copy.
 - **The tests tagged `documents` run alone with `./mvnw -B -s settings.xml -Pdocuments test`**, and
   `DocumentTestsTaggedTest` fails when a test reads a document without the tag; none reads one today.
 - **The `shared-rules` workflow checks the documents** on every push and pull request, while the
-  build skips a change to documents alone: `check-shared`, `check-citations`, `check-doc-site` and
-  the tests tagged `documents`. `citations-exempt.txt` names the measured
+  build skips a change to documents alone: `check-shared`, `check-citations`, `check-doc-site`,
+  `check-readmes` and the tests tagged `documents`. `citations-exempt.txt` names the measured
   corpus, whose lines hold the shape of issue numbers on purpose.
 
 ## The skills this repository uses

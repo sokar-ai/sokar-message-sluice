@@ -25,7 +25,6 @@ Nothing open: the filter as it is, kept working.
 |---|---|---|---|---|
 | [SL08](SL08-Refuse-A-Payload-Spread-Over-Several-Messages.md) | open | — | A payload cut into pieces and sent over several messages, caught by correlating against what the task already sent. | 0 |
 | [SL04](SL04-An-External-Detector-Measured.md) | open | — | Somebody else's detector catalog behind the interface, measured before anything is adopted. | 0 |
-| [SL11](SL11-Refuse-A-Pointer-To-Something-That-Is-Gone.md) | open | — | A test that refuses a link to an issue's file, and a citation carrying an index link whose issue is gone. | 1 |
 | [SL12](SL12-Refuse-A-Description-That-Stopped-Being-True.md) | open | — | A test that refuses a description contradicted by something the build can read - the modules named against the modules that exist. | 0 |
 
 **Status** means: `open` - nobody is on it. `in progress` - somebody is. `handed on` - the work

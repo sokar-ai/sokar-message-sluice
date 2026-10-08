@@ -7,9 +7,9 @@ build refuses the two disagreeing: the modules a description names are the modul
 
 ## Why
 
-[SL11](README.md) asks whether what a document names still exists; nothing asks whether what exists
-is still described. A description of the modules here once named fewer than the reactor held, and no
-pointer check could see it, since everything it named existed.
+The shared `check-citations` asks whether what a document points to still exists; nothing asks
+whether what exists is still described. A description of the modules here once named fewer than the
+reactor held, and no pointer check could see it, since everything it named existed.
 
 ## The shape
 

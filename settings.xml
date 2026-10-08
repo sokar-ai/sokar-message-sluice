@@ -8,7 +8,7 @@
 
     <servers>
 
-        <!-- The id the central-publishing-maven-plugin looks for, set in org.fuin:pom's
+        <!-- The id the central-publishing-maven-plugin looks for, set in sokar-parent's
              central-sonatype-release profile. Values come from the environment; nothing
              secret is in this file. -->
 

@@ -50,13 +50,16 @@ jobs:
               org.fuin.sokar.release.Main check-shared AGENTS.md
 
       # An issue's file is deleted when it is finished, so nothing links to it and nothing outside
-      # issues/ cites its number; every page is in the site's navigation once, and no link leaves doc/.
-      - name: The documents cite no issue and the site holds every page
+      # issues/ cites its number; every page is in the site's navigation once, and no link leaves doc/;
+      # every module has a README that links its submodules.
+      - name: The documents cite no issue, the site holds every page, every module says what it is
         run: |
           "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
               org.fuin.sokar.release.Main check-citations .
           "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
               org.fuin.sokar.release.Main check-doc-site doc mkdocs.yml
+          "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
+              org.fuin.sokar.release.Main check-readmes .
 
       # Every test that reads a document carries the tag documents, and the guard among them fails
       # when one does not.

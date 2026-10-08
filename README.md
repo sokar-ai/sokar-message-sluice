@@ -20,6 +20,12 @@ catch, where it sits, how it reads a message, and why it is built that way.
 message, and every refusal names the rule that made it. A checker built on a model could be talked
 round by the same text it is checking.
 
+## Modules
+
+[`filter`](filter/README.md) - the filter's code and its packages, the only module here. It is not
+a transport: what carries a message that passed lives in a repository of its own, such as
+`sokar-message-matrix`.
+
 ## Build
 
 ```

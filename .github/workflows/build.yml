@@ -55,6 +55,18 @@ jobs:
           "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
               org.fuin.sokar.release.Main check-actions
 
+      # A release depends only on releases: every snapshot Maven resolved - dependencies, plugins and
+      # their dependencies, inactive profiles included - is refused before anything is built. On a tag
+      # only, since a branch may build against another repository's snapshot. With the build's own
+      # profiles, which add the package modules: without them their plugins are not read.
+      - name: A release depends only on releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          ./mvnw -B -q -s settings.xml -Pnative,dist help:effective-pom -Doutput=target/effective-pom.xml
+          "$JAVA_HOME_25_X64/bin/java" -cp "$(cat "$RUNNER_TEMP/tools.classpath")" \
+              org.fuin.sokar.release.Main check-releases target/effective-pom.xml \
+              --requires org.fuin.sokar:sokar-release
+
       # -s settings.xml declares the snapshot repository, and keeps a developer's own
       # ~/.m2/settings.xml out of what CI resolves. The filter ships as a native executable in
       # packages, so both are built on every push; the run number makes each snapshot's version

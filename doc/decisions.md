@@ -24,7 +24,7 @@ change the answer.
 | Detectors | [A full hash in hex is refused](#a-full-hash-in-hex-is-refused) |
 | Build | [Every action is pinned to a commit, and Dependabot moves it](#every-action-is-pinned-to-a-commit-and-dependabot-moves-it) |
 | Build | [The binaries are compiled for the x86-64 baseline](#the-binaries-are-compiled-for-the-x86-64-baseline) |
-| Build | [NullAway checks the main compile, configured in this repository's root POM](#nullaway-checks-the-main-compile-configured-in-this-repositorys-root-pom) |
+| Build | [NullAway checks the main compile, configured in `sokar-parent`](#nullaway-checks-the-main-compile-configured-in-sokar-parent) |
 
 ## No language model inside the filter
 
@@ -385,7 +385,7 @@ expressions, not by vector arithmetic.
 distribution that itself requires a higher one - then the level goes into the packages and the
 test together.
 
-## NullAway checks the main compile, configured in this repository's root POM
+## NullAway checks the main compile, configured in `sokar-parent`
 
 Every package with main code is `@NullMarked`. Error Prone runs NullAway, and only NullAway, on the
 `default-compile` execution of the filter, limited to marked code by `OnlyNullMarked`: tests
@@ -394,9 +394,8 @@ pass `null` on purpose and are not checked. A planted `return null;` from a meth
 that does not report a file attribute fails as an `IOException`, which the callers treat as a check
 that could not be made.
 
-**Where it lives**: in this root POM, not in the parent `org.fuin:pom`, which is not ours to change.
-It moves there the day the parent takes it, together with the same block in the other Sokar
-repositories.
+**Where it lives**: in the parent `sokar-parent`, which manages the main compile's arguments and
+processor paths for every Sokar repository; this root POM declares no compiler block of its own.
 
 **What it needs**: `.mvn/jvm.config` opens javac's internals to Error Prone. Without it JDK 25 refuses
 Error Prone before checking a file. `./mvnw` reads that file, locally and in CI.

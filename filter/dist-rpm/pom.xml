@@ -46,7 +46,6 @@
             <plugin>
                 <groupId>de.dentrassi.maven</groupId>
                 <artifactId>rpm</artifactId>
-                <version>${rpm-maven-plugin.version}</version>
                 <executions>
                     <execution>
                         <id>rpm</id>
@@ -100,6 +99,55 @@
                                     <license>true</license>
                                 </entry>
                             </entries>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- After both packages are written, the versions read back out of them (PackageVersionIT, from
+                 dist-common): this module is the reactor's last, so the .deb is there too. A pom module
+                 binds no compile or failsafe of its own, so both are bound here; the root's LinkageIT run
+                 belongs to the app module and is switched off. -->
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>package-check-compile</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>linkage</id>
+                        <phase>none</phase>
+                    </execution>
+                    <execution>
+                        <id>package-version</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/PackageVersionIT.java</include>
+                            </includes>
+                            <systemPropertyVariables>
+                                <sluice.project.version>${project.version}</sluice.project.version>
+                                <sluice.snapshot.run>${sluice.snapshot.run}</sluice.snapshot.run>
+                                <sluice.deb>${project.basedir}/../dist-deb/target/sokar-message-sluice-filter_${sluice.package.version}_amd64.deb</sluice.deb>
+                                <sluice.rpm>${project.build.directory}/sokar-message-sluice-filter-${sluice.package.version}-1.x86_64.rpm</sluice.rpm>
+                            </systemPropertyVariables>
                         </configuration>
                     </execution>
                 </executions>

@@ -7,9 +7,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.fuin</groupId>
-        <artifactId>pom</artifactId>
-        <version>2.0.2</version>
+        <groupId>org.fuin.sokar</groupId>
+        <artifactId>sokar-parent</artifactId>
+        <version>0.1.1</version>
         <relativePath/>
     </parent>
 
@@ -44,20 +44,6 @@
     </modules>
 
     <properties>
-        <java.release.version>25</java.release.version>
-        <fuin-bom.version>1.0.2</fuin-bom.version>
-        <native-maven-plugin.version>1.1.11</native-maven-plugin.version>
-        <jdeb.version>1.14</jdeb.version>
-        <rpm-maven-plugin.version>1.13.0</rpm-maven-plugin.version>
-        <build-helper.version>3.6.1</build-helper.version>
-        <cyclonedx.version>2.9.3</cyclonedx.version>
-        <error-prone.version>2.50.0</error-prone.version>
-        <nullaway.version>0.14.2</nullaway.version>
-
-        <failsafe.version>3.5.5</failsafe.version>
-        <!-- The build tools, named directly: sokar-bom would pin them to Sokar's own release. -->
-        <sokar.buildtools.version>0.4.1</sokar.buildtools.version>
-
         <!-- The highest symbol versions the native binaries use, measured with readelf.
              The packages declare them, and LinkageIT holds them to the binaries. -->
         <sluice.glibc.floor>2.34</sluice.glibc.floor>
@@ -65,18 +51,24 @@
 
         <!-- The run number CI passes; a local build is marked as one. -->
         <sluice.snapshot.run>0+local.${maven.build.timestamp}</sluice.snapshot.run>
-        <maven.build.timestamp.format>yyyyMMdd'T'HHmmss</maven.build.timestamp.format>
-
-        <!-- Binaries somebody runs, not libraries anybody resolves. -->
-        <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 
     <dependencyManagement>
 
         <dependencies>
 
-            <!-- Where jackson, jspecify, junit and assertj get their versions, as in the sokar
-                 repository. Also pins Byte Buddy to a release that accepts JDK 25 class files. -->
+            <!-- Where jackson, jspecify and assertj get their versions, as in the sokar repository. JUnit's
+                 BOM first: a repository's own imports come before the parent's, and the fuin BOM pins an
+                 older JUnit than the parent's. Also pins Byte Buddy to a release that accepts JDK 25 class
+                 files. -->
+
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
             <dependency>
                 <groupId>org.fuin</groupId>
@@ -91,45 +83,6 @@
     </dependencyManagement>
 
     <build>
-
-        <plugins>
-
-            <!-- @NullMarked is a promise until something checks it: NullAway makes a broken nullness
-                 contract a compile error. Only the main compile - tests pass null on purpose. Error
-                 Prone runs only NullAway, so it adds nothing else to fix. Declaring processor paths
-                 turns off discovery from the class path; nothing here relies on it. Needs
-                 .mvn/jvm.config, which opens javac's internals to Error Prone on JDK 25. -->
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default-compile</id>
-                        <configuration>
-                            <compilerArgs>
-                                <arg>-XDcompilePolicy=simple</arg>
-                                <arg>--should-stop=ifError=FLOW</arg>
-                                <arg>-Xplugin:ErrorProne -XepDisableAllChecks -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true</arg>
-                            </compilerArgs>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>com.google.errorprone</groupId>
-                                    <artifactId>error_prone_core</artifactId>
-                                    <version>${error-prone.version}</version>
-                                </path>
-                                <path>
-                                    <groupId>com.uber.nullaway</groupId>
-                                    <artifactId>nullaway</artifactId>
-                                    <version>${nullaway.version}</version>
-                                </path>
-                            </annotationProcessorPaths>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-        </plugins>
 
         <pluginManagement>
             <plugins>
@@ -193,7 +146,6 @@
                         <plugin>
                             <groupId>org.graalvm.buildtools</groupId>
                             <artifactId>native-maven-plugin</artifactId>
-                            <version>${native-maven-plugin.version}</version>
                             <extensions>true</extensions>
                             <executions>
                                 <execution>
@@ -227,27 +179,6 @@
         <!-- The packages: a dist-deb and a dist-rpm module beside the program's code, one package per
              format. Needs 'native' in the same run: -Pnative,dist. -->
 
-        <!-- Sokar's machine tool on the class path, for installing the packages on a rented machine
-             before a push: dependency:build-classpath with -Pci-tools, then its Main. As in the agent
-             repositories. -->
-
-        <profile>
-            <id>ci-tools</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.fuin.sokar</groupId>
-                    <artifactId>sokar-machines</artifactId>
-                    <version>${sokar.buildtools.version}</version>
-                </dependency>
-                <!-- check-actions, check-shared, check-citations and check-doc-site. -->
-                <dependency>
-                    <groupId>org.fuin.sokar</groupId>
-                    <artifactId>sokar-release</artifactId>
-                    <version>${sokar.buildtools.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
         <!-- Only the tests that read the repository's documents, all a change to documents needs:
              'mvn -Pdocuments test'. DocumentTestsTaggedTest holds every such test to the tag. -->
 
@@ -266,7 +197,6 @@
                         <plugin>
                             <groupId>org.cyclonedx</groupId>
                             <artifactId>cyclonedx-maven-plugin</artifactId>
-                            <version>${cyclonedx.version}</version>
                             <executions>
                                 <execution>
                                     <id>bill-of-materials</id>
@@ -288,7 +218,6 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-failsafe-plugin</artifactId>
-                            <version>${failsafe.version}</version>
                             <executions>
                                 <execution>
                                     <id>linkage</id>
@@ -314,7 +243,6 @@
                         <plugin>
                             <groupId>org.codehaus.mojo</groupId>
                             <artifactId>build-helper-maven-plugin</artifactId>
-                            <version>${build-helper.version}</version>
                             <executions>
                                 <!-- 1.0.0-SNAPSHOT becomes 1.0.0~snapshot.<run>: '~' sorts below the
                                      release in dpkg and rpm alike, '-' above it. -->
