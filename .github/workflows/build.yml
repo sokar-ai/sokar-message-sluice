@@ -1,7 +1,8 @@
 # Unit tests, the native executable, its packages - and on main, the packages published.
 name: Build
+run-name: "${{ github.workflow }} · ${{ github.ref_name }}: ${{ github.event.head_commit.message || github.event.pull_request.title || github.workflow }}"
 
-# A push that only touches documents builds nothing; the Shared rules workflow checks them.
+# A push that only touches documents builds nothing; the Shared rules check workflow checks them.
 on:
   push:
     branches: ['**']

@@ -1,6 +1,7 @@
 # The rules and the documents - the Build workflow skips a change to documents alone, so what such a
 # change needs runs here, on a GitHub runner and without the native build.
-name: Shared rules
+name: Shared rules check
+run-name: "${{ github.workflow }} · ${{ github.ref_name }}: ${{ github.event.head_commit.message || github.event.pull_request.title || github.workflow }}"
 
 on:
   push:
