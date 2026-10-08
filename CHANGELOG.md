@@ -27,3 +27,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The `.rpm` module reads the version back out of the built `.deb` and `.rpm` (`PackageVersionIT`) and fails
   the build when either does not carry the project's version as a package version (a snapshot as
   `~snapshot.<run>`, worked out by the test, not taken from the build), or the `.rpm`'s release is not 1.
+- The build takes `sokar-parent` 0.1.2, and with it `sokar-buildtools` 0.4.3.
