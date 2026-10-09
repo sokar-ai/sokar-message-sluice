@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Every workflow run is titled by its workflow, branch and commit, and the shared-rules workflow is named
   `Shared rules check`.
+- The build takes `sokar-parent` 0.1.4-SNAPSHOT, and with it `sokar-buildtools` 0.4.5-SNAPSHOT; a release of this
+  repository waits until both are released and pinned.
 
 ## [0.4.1] - 2026-10-08
 
