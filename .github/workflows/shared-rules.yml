@@ -10,6 +10,10 @@ on:
     branches: ['**']
   workflow_dispatch:
 
+# The job's token only reads the repository.
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

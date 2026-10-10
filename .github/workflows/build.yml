@@ -14,6 +14,10 @@ on:
     paths: ['**', '!**/*.md', '!doc/**', '!issues/**', '!mkdocs.yml']
   workflow_dispatch:
 
+# The job's token only reads the repository; the packages are published with the JFrog token, not with it.
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
