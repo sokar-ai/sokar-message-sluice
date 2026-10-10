@@ -18,6 +18,7 @@ Nothing open: the filter as it is, kept working.
 |---|---|---|---|---|
 | [SL07](SL07-Refuse-Credentials-And-Personal-Data.md) | open | — | Credentials and personal data, caught by a catalog of pattern, context and checksum. | 0 |
 | [SL23](SL23-The-Narrowed-Message-Schema-The-Filters-Side.md) | blocked | Sokar B108 | B14's narrowed message schema enforced in the envelope: four `metadata` keys, five kinds with their fixed data parts, one text part, one extension URI. | 2 |
+| [SL24](SL24-A-Code-Comment-The-Filters-Side.md) | blocked | Sokar B166 | A comment on code passes only in its exact shape: an anchor checked by shape, prose judged as prose, an optional suggestion bounded to its anchor and judged by detectors measured on code. | 3 |
 
 ## Later
 
